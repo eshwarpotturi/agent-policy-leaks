@@ -1,0 +1,6 @@
+.foundry-token
+.foundry-token.txt
+node_modules/
+run-log.txt
+data.failed.js
+_to_delete/
