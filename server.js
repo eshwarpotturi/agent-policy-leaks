@@ -2,14 +2,14 @@
 // Serves the page and runs the real agents on LLM Foundry when you press Find leaks / Fix the policy / Attack it.
 // Every event streams to the page as it happens. You approve or reject policy changes in the page.
 const http = require("http"), fs = require("fs"), path = require("path");
-const { createRun } = require("./run.js"), { makeChat } = require("./foundry.js"), E = require("./engine.js");
+const { createRun } = require("./run.js"), { makeChat, tokenStatus } = require("./foundry.js"), E = require("./engine.js");
 const PORT = +process.env.PORT || 8770, DIR = __dirname;
 const log = m => console.log("[" + new Date().toLocaleTimeString("en-GB") + "] " + m);
 const clients = new Set(); let S, LLM, busy = null, lastError = null, T0 = Date.now();
 const send = (res, ev) => res.write("data: " + JSON.stringify(ev) + "\n\n");
 function fresh() {
   LLM = makeChat(log); T0 = Date.now();
-  S = createRun({ chat: LLM.chat, log, approve: null, onEvent: ev => { for (const c of clients) send(c, ev); } });
+  S = createRun({ chat: LLM.chat, model: LLM.MODEL, log, approve: null, onEvent: ev => { for (const c of clients) send(c, ev); } });
   S.setup();
 }
 fresh();
@@ -44,4 +44,4 @@ http.createServer(async (req, res) => {
   let p = path.normalize(decodeURIComponent(u.pathname)).replace(/^([\/\\])+/, ""); if (!p) p = "index.html";
   const f = path.join(DIR, p); if (!f.startsWith(DIR) || /foundry-token/.test(f) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end("not found"); return; }
   res.writeHead(200, { "Content-Type": TYPES[path.extname(f)] || "application/octet-stream", "Cache-Control": "no-store" }); fs.createReadStream(f).pipe(res);
-}).listen(PORT, "127.0.0.1", () => log("Policy leak finder, live: http://localhost:" + PORT));
+}).listen(PORT, "127.0.0.1", () => { log("Policy leak finder, live: http://localhost:" + PORT); log("LLM Foundry token: " + tokenStatus()); });

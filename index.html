@@ -7,142 +7,182 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f3f4f7;--panel:#fff;--ink:#151a24;--muted:#5d6678;--faint:#8b93a3;--line:#dde1e8;--ok:#1b8a4b;--okbg:#e3f4ea;--no:#6b7383;--nobg:#eceef2;--leak:#d0312d;--leakbg:#fde7e6;--chg:#b7791f;--chgbg:#fff4d6;--accent:#2b4fd8;--cn:#8a3ffc;--eu:#1f6feb;--gl:#0f7b72;--rt:#1c2230;--p:#6b5bd2;color-scheme:light}
+:root{--bg:#f3f4f7;--panel:#fff;--ink:#151a24;--muted:#5d6678;--faint:#8b93a3;--line:#dde1e8;--soft:#f7f8fa;--ok:#1b8a4b;--okbg:#e3f4ea;--no:#6b7383;--nobg:#eceef2;--leak:#d0312d;--leakbg:#fde7e6;--chg:#b7791f;--chgbg:#fff4d6;--accent:#2b4fd8;--accbg:#eef1ff;--inv:#7a3db8;--invbg:#f4ecfb;--cn:#8a3ffc;--eu:#1f6feb;--gl:#0f7b72;--p:#6b5bd2;color-scheme:light}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:14.5px/1.45 "IBM Plex Sans",system-ui,sans-serif}
 button,input{font:inherit;color:inherit}
-.wrap{max-width:1440px;margin:0 auto;padding:12px 16px 24px;display:grid;gap:12px}
+.wrap{max-width:1240px;margin:0 auto;padding:12px 16px 28px;display:grid;gap:12px}
 header{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
 h1{margin:0;font-size:20px;letter-spacing:-.01em}h1 small{font-weight:400;color:var(--muted);font-size:13.5px;margin-left:8px}
 .mode{font:600 12px "IBM Plex Mono",monospace;padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:#fff}
-.mode.live{color:var(--ok);border-color:#9fd5b6;background:var(--okbg)}.mode.rep{color:var(--accent);border-color:#cbd5ff;background:#eef1ff}.mode.sample{color:#7a4f00;border-color:#f0d58f;background:var(--chgbg)}
-.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:12px;align-items:start}
-.col{display:grid;gap:12px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.card>h2{margin:0 0 8px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);display:flex;justify-content:space-between;gap:8px;align-items:center}
+.mode.live{color:var(--ok);border-color:#9fd5b6;background:var(--okbg)}.mode.rep{color:var(--accent);border-color:#cbd5ff;background:var(--accbg)}.mode.sample{color:#7a4f00;border-color:#f0d58f;background:var(--chgbg)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;transition:box-shadow .3s,opacity .3s}
+.card>h2{margin:0 0 10px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
 .h2n{text-transform:none;letter-spacing:0;font-weight:400}
 .btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 13px;cursor:pointer;font-weight:500;white-space:nowrap}
 .btn:hover:not(:disabled){border-color:#aab2c0}.btn:disabled{opacity:.45;cursor:default}
-.btn.pri{background:var(--ink);color:#fff;border-color:var(--ink)}.btn.go{background:var(--ok);color:#fff;border-color:var(--ok)}
-.btn.sm{padding:3px 9px;font-size:13px}
-.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.btn.pri{background:var(--ink);color:#fff;border-color:var(--ink)}.btn.go{background:var(--ok);color:#fff;border-color:var(--ok)}.btn.sm{padding:3px 9px;font-size:13px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
 .status{font-size:13.5px;color:var(--muted);display:flex;gap:8px;align-items:center}
 .spin{width:12px;height:12px;border:2px solid #c9cfd9;border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;display:inline-block;flex:none}
 @keyframes sp{to{transform:rotate(360deg)}}
+.hint{font-size:12.5px;color:var(--muted)}
+.two{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:16px;align-items:start}
+/* setup card */
+.er svg{width:100%;height:auto;display:block}
+.goal{background:var(--leakbg);border-radius:10px;padding:10px 14px}
+.goal b.t,.flag b.t{display:block;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.goal b.t{color:var(--leak)}.goal ul{margin:0;padding-left:18px;font-size:13.5px;display:grid;gap:3px}
+.flag{background:var(--invbg);border-radius:10px;padding:10px 14px;margin-top:10px}.flag b.t{color:var(--inv)}
+.flag ol{margin:0;padding-left:20px;font-size:13.5px;display:grid;gap:3px}
+/* matrix */
 .mxw{overflow-x:auto}
-table.mx{border-collapse:separate;border-spacing:5px;width:100%;min-width:600px;table-layout:fixed}
+table.mx{border-collapse:separate;border-spacing:5px;width:100%;min-width:680px;table-layout:fixed}
 .mx th{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:2px;text-align:center}
-.mx td.ag{padding:6px 8px;border-radius:9px;background:#f7f8fa}.ag b{display:flex;gap:6px;align-items:center;font-size:14px}.ag b i{width:9px;height:9px;border-radius:50%;flex:none}.ag span{font-size:12px;color:var(--muted)}
-.mx td.c{position:relative;border-radius:9px;text-align:center;padding:14px 6px 12px;height:68px;border:2px solid transparent;transition:background .3s,border-color .3s}
+.mx td.ag{padding:6px 10px;border-radius:9px;background:var(--soft)}.ag b{display:flex;gap:7px;align-items:center;font-size:14.5px}.ag b i{width:10px;height:10px;border-radius:50%;flex:none}.ag span{font-size:12px;color:var(--muted)}
+.mx td.c{position:relative;border-radius:9px;text-align:center;padding:15px 6px 13px;height:70px;border:2px solid transparent;cursor:pointer;transition:background .3s,border-color .3s}
+.mx td.c:hover{outline:2px solid var(--accent);outline-offset:-2px}
 .c .v{font-weight:600;font-size:13.5px}.c .q{font-size:11.5px;color:var(--muted)}
 .c.yes{background:var(--okbg)}.c.yes .v{color:var(--ok)}.c.no{background:var(--nobg)}.c.no .v{color:var(--no)}.c.unset{background:#fff;border:2px dashed #c9cfd9}.c.unset .v{color:var(--faint)}
 .c .lock{position:absolute;left:6px;top:3px;font:600 9px "IBM Plex Mono",monospace;color:var(--leak);letter-spacing:.03em}
 .c .tl{position:absolute;right:6px;bottom:2px;font:500 10px "IBM Plex Mono",monospace;color:var(--faint)}
-.c.leak{background:var(--leak)!important;border-color:var(--leak);cursor:pointer}.c.leak .v,.c.leak .q,.c.leak .tl,.c.leak .lock{color:#fff}
-.c.route{border:2px dashed var(--leak)}
-.c.chg{box-shadow:inset 0 0 0 3px var(--chg)}
-.editable .c{cursor:pointer}.editable .c:hover{outline:2px solid var(--accent);outline-offset:-2px}
+.c .mth{display:block;font:600 10.5px "IBM Plex Mono",monospace;margin-top:2px;opacity:.95}
+.c.leak{background:var(--leak)!important;border-color:var(--leak)}.c.leak .v,.c.leak .q,.c.leak .tl,.c.leak .lock{color:#fff}
+.c.route{border:2px dashed var(--leak)}.c.chg{box-shadow:inset 0 0 0 3px var(--chg)}
 .c.dirty::after{content:"edited";position:absolute;right:6px;top:3px;font:600 9px "IBM Plex Mono",monospace;color:var(--accent)}
-.guards{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:13.5px;margin:6px 4px 0}
-.guards .g{display:flex;gap:6px;align-items:center}
-.stepper{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}.stepper button{border:0;background:#f7f8fa;width:26px;cursor:pointer}.stepper button:disabled{cursor:default;opacity:.5}.stepper span{min-width:30px;text-align:center;font:600 13px "IBM Plex Mono",monospace;padding:2px 4px}
-.tog{border:1px solid var(--line);border-radius:7px;padding:2px 9px;background:#fff;cursor:pointer;font-size:13px}.tog.on{background:var(--ink);color:#fff;border-color:var(--ink)}.tog:disabled{cursor:default}
-.rules{margin-top:8px;padding:8px 12px;background:#f7f8fa;border-radius:8px;font-size:13.5px}.rules b{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.rules ol{margin:4px 0 0;padding-left:20px}.rules li.new{color:#7a4f00;font-weight:500}
 .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin:2px 4px}.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:4px}
-.hint{font-size:12.5px;color:var(--muted)}
-.er svg{width:100%;height:auto;display:block}
-.dots{display:flex;flex-wrap:wrap;gap:3px;min-height:40px;align-content:flex-start;max-height:200px;overflow:auto;padding:4px}
-.dt{width:11px;height:11px;border-radius:3px;cursor:pointer;animation:pop .25s}
+.guards{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:13.5px;margin:8px 4px 4px}.guards .g{display:flex;gap:6px;align-items:center}
+.stepper{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}.stepper button{border:0;background:var(--soft);width:26px;cursor:pointer}.stepper button:disabled{cursor:default;opacity:.5}.stepper span{min-width:30px;text-align:center;font:600 13px "IBM Plex Mono",monospace;padding:2px 4px}
+.tog{border:1px solid var(--line);border-radius:7px;padding:2px 9px;background:#fff;cursor:pointer;font-size:13px}.tog.on{background:var(--ink);color:#fff;border-color:var(--ink)}.tog:disabled{cursor:default}
+.rules{padding:9px 13px;background:var(--soft);border-radius:9px;font-size:13.5px}.rules b.t{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rules ol{margin:4px 0 0;padding-left:20px}.rules li.new{color:#7a4f00;font-weight:500}
+.vlist{display:grid;gap:5px;align-content:start}
+.vlist b.t{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--leak)}
+.vgrp{background:var(--leakbg);border-radius:9px;padding:7px 9px;display:grid;gap:5px}.vh{display:flex;gap:8px;align-items:center;font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:5px}.vchip{all:unset;cursor:pointer;font-size:12.5px;background:#fff;border:1px solid #f0b4b2;border-radius:999px;padding:2px 9px}.vchip:hover{border-color:var(--leak)}.vchip.code{border-style:dashed}.vchip i{color:var(--muted);font-style:normal}
+.cellhd{display:grid;gap:7px;padding-bottom:10px;margin-bottom:10px;border-bottom:2px dashed var(--line);font-size:14px}.cellhd .lock{font-size:10px;font-weight:700;color:var(--leak);letter-spacing:.05em}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}.tab{all:unset;cursor:pointer;display:grid;gap:1px;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:13px}.tab span{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--leak);font-weight:700}.tab.on{border-color:var(--leak);background:var(--leakbg);box-shadow:inset 0 0 0 1px var(--leak)}
+.roster{margin-top:14px;display:grid;gap:8px}.roster>b.t{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.rgroups{display:grid;grid-template-columns:1.5fr 1fr 1.6fr;gap:12px}.rg{display:grid;gap:6px;align-content:start}.rg>i{font-style:normal;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.rcards{display:grid;gap:6px}.acard{all:unset;cursor:pointer;display:grid;grid-template-columns:34px 1fr;gap:9px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:#fff;transition:box-shadow .15s,border-color .15s}
+.acard:hover{border-color:var(--ac,#151a24);box-shadow:0 4px 14px rgba(20,26,36,.1)}.acard:focus-visible{outline:2px solid var(--accent)}
+.av{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:12.5px;background:var(--ac,#151a24);font-family:"IBM Plex Mono",monospace}
+.acard b{font-size:13.5px;display:block}.acard>span:last-child>span{font-size:11.5px;color:var(--muted);display:block;line-height:1.3}.acard .st{color:var(--leak)}.acard .av,.ahd .av{color:#fff}
+.rmini{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ahd{display:grid;grid-template-columns:46px 1fr;gap:12px;align-items:center}.ahd .av{width:46px;height:46px;font-size:15px;border-radius:12px}.ahd h3{margin:0;font-size:19px}
+.chips2{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}.chip2{font-size:11.5px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+.agrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.acc{display:grid;gap:3px;font-size:13.5px}.acc div{display:grid;grid-template-columns:1fr auto;gap:8px;padding:3px 0;border-bottom:1px dashed var(--line)}.acc .yes{color:var(--ok);font-weight:600}.acc .no{color:var(--muted)}.acc .lk{font-size:10px;font-weight:700;color:var(--leak);letter-spacing:.04em}
+.tool{border:1px solid var(--line);border-radius:9px;padding:7px 10px;display:grid;gap:3px}.tool code{font-weight:700;font-size:13px}.tool .d{font-size:13px}.tool .ps{display:flex;flex-wrap:wrap;gap:4px}.tool .ps span{font-size:11.5px;font-family:"IBM Plex Mono",monospace;background:var(--soft);border-radius:5px;padding:1px 6px}.tool .ps span.req{font-weight:700}
+pre.prompt{white-space:pre-wrap;font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.5;background:#151a24;color:#e7ebf2;border-radius:9px;padding:10px 12px;margin:4px 0 0;max-height:280px;overflow:auto}
+@media (max-width:900px){.rgroups{grid-template-columns:1fr}.agrid{grid-template-columns:1fr}}
+.guide[hidden]{display:none}
+.svgag{cursor:pointer}.svgag:hover rect{filter:drop-shadow(0 2px 6px rgba(20,26,36,.25))}
+body.guiding .guide{z-index:25}
+.vrow{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:5px 8px;border-radius:7px;background:var(--leakbg);font-size:13px}
+.vrow:hover{outline:2px solid var(--leak)}
+.mtag{font:600 10.5px "IBM Plex Mono",monospace;color:#fff;background:var(--leak);border-radius:4px;padding:1px 6px;white-space:nowrap}
+.fby{font:600 10px "IBM Plex Mono",monospace;color:var(--inv);white-space:nowrap}.fby.code{color:var(--no)}
+.empty{color:var(--muted);font-size:13.5px}
+/* activity */
+.dots{display:flex;flex-wrap:wrap;gap:3px;min-height:26px;align-content:flex-start;max-height:180px;overflow:auto;padding:4px}
+.dt{width:12px;height:12px;border-radius:3px;cursor:pointer;animation:pop .25s}
 .dt.allow{background:#7cc79b}.dt.block{background:#b7bdc8}.dt.leak{background:var(--leak);transform:scale(1.3);box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(208,49,45,.35)}
-.dt.sel{outline:2px solid var(--ink);outline-offset:2px}
 @keyframes pop{from{transform:scale(0)}}
-.counts{display:flex;flex-wrap:wrap;gap:14px;font:500 13px "IBM Plex Mono",monospace;margin:2px 0 6px}.counts b{font-size:18px}
+.counts{display:flex;flex-wrap:wrap;gap:16px;font:500 13px "IBM Plex Mono",monospace;margin:0 0 6px}.counts b{font-size:18px}
 .last{font:12.5px "IBM Plex Mono",monospace;color:var(--muted);min-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ev{display:grid;gap:8px}
-.ev h3{margin:0;font-size:18px;line-height:1.25}.ev .amt{font:600 24px "IBM Plex Mono",monospace;color:var(--leak)}
-.ev .ask{font-size:13.5px;background:#f7f8fa;border-radius:8px;padding:7px 10px}.ev .ask i{font-style:normal;color:var(--muted);font:600 11px "IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.06em;display:block}
-.ev .qa{font:13px "IBM Plex Mono",monospace;border-left:3px solid var(--ok);padding:4px 10px;background:#f7fbf8}
-.ev .rv{background:var(--leak);color:#fff;border-radius:8px;padding:8px 12px;font-weight:600}
-.ev .rv small{display:block;font-weight:400;opacity:.92}
-.rost{display:grid;gap:4px;background:#f7f8fa;border-radius:8px;padding:8px 10px}
-.rost .cols{display:grid;gap:8px}.rost .cc>i{display:block;font-style:normal;font-size:11px;font-weight:600;color:var(--muted)}
-.pp{display:flex;gap:4px;align-items:center;font-size:12.5px;padding:1px 5px;border-radius:5px;border:1px solid transparent;white-space:nowrap;overflow:hidden;opacity:.35}
-.pp:not(.vic):not(.cv) em{display:none}
-.pp em{margin-left:auto;font:500 10.5px "IBM Plex Mono",monospace;font-style:normal;color:var(--muted);padding-left:3px}
-.pp .p{font:700 9px "IBM Plex Mono",monospace;color:#fff;background:var(--p);border-radius:3px;padding:0 3px}
-.pp.cv{opacity:1;border:2px solid var(--accent);background:#eef1ff}.pp.vic{opacity:1;background:var(--leak);color:#fff}.pp.vic em{color:#fff}
-.leaklist{display:grid;gap:2px;margin-top:4px}.leaklist button{all:unset;cursor:pointer;font-size:13px;padding:3px 6px;border-radius:6px}.leaklist button:hover{background:var(--leakbg)}.leaklist button.on{background:var(--leakbg);font-weight:600}
-.empty{color:var(--muted);font-size:13.5px;padding:6px 0}
-.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.cmp h4{margin:0 0 4px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-.mini{border-collapse:separate;border-spacing:3px;width:100%;table-layout:fixed;font-size:12px}
-.mini td{border-radius:6px;padding:5px 4px;text-align:center}.mini td.a{text-align:left;background:#f7f8fa;font-weight:600}
-.mini th{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase}
-.drafts{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.invline{font-size:13px;color:var(--inv);min-height:18px;margin-top:2px}
+/* proposal */
+.callout{border:2px solid var(--chg);background:var(--chgbg);border-radius:10px;padding:11px 14px;display:grid;gap:6px}
+.callout b.t{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#7a4f00}
+.chgrow{display:grid;grid-template-columns:minmax(150px,auto) 1fr auto;gap:10px;align-items:center;font-size:14px;background:#fff;border-radius:8px;padding:7px 10px}
+.chgrow .area{font-weight:700}.chgrow .eff{font:600 12.5px "IBM Plex Mono",monospace;white-space:nowrap}
+.mini{border-collapse:separate;border-spacing:3px;width:100%;table-layout:fixed;font-size:12.5px}
+.mini td{border-radius:6px;padding:6px 4px;text-align:center}.mini td.a{text-align:left;background:var(--soft);font-weight:600}
+.mini th{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase}
+.drafts{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
 .dr{border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:12.5px;display:inline-flex;gap:6px;align-items:center}.dr.ok{border-color:var(--ok);background:var(--okbg)}.dr.bad{border-color:#f0b4b2;background:var(--leakbg)}
-.score{display:flex;gap:16px;flex-wrap:wrap;font-size:13.5px;margin:8px 0}.score b{font:600 15px "IBM Plex Mono",monospace}
+.stack{display:grid;gap:10px;margin-top:10px}.stack h4{margin:0 0 3px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.score{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;margin:10px 0}.score b{font:600 15px "IBM Plex Mono",monospace}
 .stamp{display:inline-block;border:2px solid var(--ok);color:var(--ok);font-weight:700;border-radius:8px;padding:4px 10px;transform:rotate(-1deg)}.stamp.rej{border-color:var(--leak);color:var(--leak)}
 input.reason{border:1px solid var(--line);border-radius:7px;padding:6px 9px;min-width:220px;flex:1}
-.wall{position:relative;height:150px;background:#f7f8fa;border-radius:10px;overflow:hidden}
+/* wall */
+.wall{position:relative;height:140px;background:var(--soft);border-radius:10px;overflow:hidden}
 .wall .w{position:absolute;left:64%;top:0;bottom:0;width:9px;background:var(--ink);border-radius:3px}
 .wall .w::after{content:"policy";position:absolute;top:6px;left:14px;font:600 11px "IBM Plex Mono",monospace;color:var(--muted)}
 .wall span{position:absolute;width:11px;height:11px;border-radius:50%;background:var(--no);transition:left .9s ease-in;cursor:pointer}
 .wall span.ok{background:#fff;border:3px solid var(--ok)}.wall span.lk{background:var(--leak)}
 .lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12.5px;margin-top:6px}.lanes b{display:block}
-#pop{position:fixed;right:16px;bottom:16px;max-width:min(480px,calc(100vw - 32px));background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 40px rgba(20,26,36,.18);padding:12px 14px;font-size:13.5px;display:none;z-index:9}
-#pop.show{display:block}#pop pre{white-space:pre-wrap;font:12px "IBM Plex Mono",monospace;background:#f7f8fa;border-radius:6px;padding:8px;margin:6px 0 0}
-.x{position:absolute;right:8px;top:4px;border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted)}
-.modal{position:fixed;inset:0;background:rgba(20,26,36,.45);display:none;place-items:center;z-index:10;padding:16px}.modal.show{display:grid}
-.modal>div{position:relative;background:#fff;border-radius:12px;padding:16px;max-height:90vh;overflow:auto;width:min(860px,100%)}
+/* popup */
+.modal{position:fixed;inset:0;background:rgba(20,26,36,.45);display:none;place-items:center;z-index:20;padding:16px}.modal.show{display:grid}
+.modal>.box{position:relative;background:#fff;border-radius:14px;padding:18px 20px;max-height:90vh;overflow:auto;width:min(820px,100%);display:grid;gap:10px;box-shadow:0 20px 60px rgba(20,26,36,.3)}
+.x{position:absolute;right:10px;top:6px;border:0;background:none;font-size:22px;cursor:pointer;color:var(--muted)}
+.box h3{margin:0;font-size:20px;line-height:1.25;padding-right:24px}.box .amt{font:600 24px "IBM Plex Mono",monospace;color:var(--leak)}
+.box .tags{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sec{border-radius:9px;padding:9px 12px;background:var(--soft)}.sec>i{display:block;font:600 11px "IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-style:normal;margin-bottom:3px}
+.sec.inv{background:var(--invbg)}.sec.inv>i{color:var(--inv)}
+.qa{font:13px "IBM Plex Mono",monospace;border-left:3px solid var(--ok);padding:4px 10px;background:#f7fbf8;margin-top:4px}
+.checks{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:3px;font-size:13.5px}.checks li::before{content:"✓ ";color:var(--ok);font-weight:700}.checks li.bad::before{content:"✗ ";color:var(--leak)}
+.rv{background:var(--leak);color:#fff;border-radius:9px;padding:9px 13px;font-weight:600}.rv small{display:block;font-weight:400;opacity:.92}
+.okmsg{background:var(--okbg);color:var(--ok);border-radius:9px;padding:9px 13px;font-weight:600}
+.rost{display:grid;gap:4px;background:var(--soft);border-radius:9px;padding:8px 10px}
+.rost .cols{display:grid;gap:8px}.rost .cc>i{display:block;font-style:normal;font-size:11px;font-weight:600;color:var(--muted)}
+.pp{display:flex;gap:4px;align-items:center;font-size:12.5px;padding:1px 5px;border-radius:5px;border:1px solid transparent;white-space:nowrap;overflow:hidden;opacity:.35}
+.pp em{margin-left:auto;font:500 10.5px "IBM Plex Mono",monospace;font-style:normal;color:var(--muted);padding-left:3px}
+.pp .p{font:700 9px "IBM Plex Mono",monospace;color:#fff;background:var(--p);border-radius:3px;padding:0 3px}
+.pp.cv{opacity:1;border:2px solid var(--accent);background:var(--accbg)}.pp.vic{opacity:1;background:var(--leak);color:#fff}.pp.vic em{color:#fff}
+.opts{display:flex;gap:6px;flex-wrap:wrap}
 .dtab{width:100%;border-collapse:collapse;font-size:13px}.dtab th{text-align:left;font-size:11px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding:4px 8px}.dtab td{padding:3px 8px;border-bottom:1px solid #eef0f4}.dtab td.r{text-align:right;font-family:"IBM Plex Mono",monospace}
-footer{font-size:12.5px;color:var(--muted)}
-.guide{position:sticky;top:8px;z-index:8;display:flex;gap:14px;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:12px;padding:12px 16px;box-shadow:0 8px 28px rgba(20,26,36,.12);font-size:clamp(15px,1.35vw,18px);line-height:1.45}
-.guide.red{border-left-color:var(--leak)}.guide.green{border-left-color:var(--ok)}
+/* guide */
+.guide{position:sticky;top:8px;z-index:15;display:flex;gap:14px;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:12px;padding:12px 16px;box-shadow:0 8px 28px rgba(20,26,36,.12);font-size:clamp(15px,1.3vw,17.5px);line-height:1.45}
+.guide.red{border-left-color:var(--leak)}.guide.green{border-left-color:var(--ok)}.guide.inv{border-left-color:var(--inv)}
 .guide .gbtns{display:flex;gap:6px;flex:none;align-items:center}
 .gtag{font:600 11px "IBM Plex Mono",monospace;color:#fff;background:var(--leak);border-radius:4px;padding:2px 6px;margin-right:4px;vertical-align:2px}
-.card{transition:box-shadow .3s,opacity .3s}
-body.guiding .card{opacity:.55}body.guiding .card.spot{opacity:1;box-shadow:0 0 0 3px var(--accent),0 10px 30px rgba(43,79,216,.15)}
-@media (max-width:1000px){.grid{grid-template-columns:1fr}.cmp{grid-template-columns:1fr}.lanes{grid-template-columns:1fr}}
+body.guiding .card{opacity:.5}body.guiding .card.spot{opacity:1;box-shadow:0 0 0 3px var(--accent),0 10px 30px rgba(43,79,216,.15)}
+body.guiding .modal{background:rgba(20,26,36,.25);padding-top:120px;align-items:start}
+footer{font-size:12.5px;color:var(--muted)}
+@media (max-width:900px){.two{grid-template-columns:1fr}.lanes{grid-template-columns:1fr}.chgrow{grid-template-columns:1fr}.guide{flex-direction:column;align-items:stretch}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>Policy leak finder<small>AI agents work under your permission policy; code catches what leaks</small></h1>
+    <h1>Policy leak finder<small>AI agents work under your permission policy · an AI Investigator flags what goes wrong · code confirms it</small></h1>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span id="cost" class="hint"></span><span id="mode" class="mode">…</span><button class="btn pri" id="bGuide">▶ Guided run</button></div>
   </header>
   <div class="guide" id="guide" hidden><div id="gtext"></div><div class="gbtns"><button class="btn pri" id="gnext" hidden>Continue ›</button><button class="btn sm" id="gexit">Exit guide</button></div></div>
-  <div class="grid">
-    <div class="col">
-      <section class="card" id="polcard">
-        <h2><span>Permission policy <span id="ver"></span></span><span id="polnote" class="h2n" style="color:var(--leak);font-weight:600"></span></h2>
-        <div class="mxw"><table class="mx" id="mx"></table></div>
-        <div class="guards" id="guards"></div>
-        <div class="legend"><span><i style="background:var(--okbg);border:1px solid var(--ok)"></i>allowed</span><span><i style="background:var(--nobg);border:1px solid var(--no)"></i>not allowed</span><span><i style="border:1px dashed #9aa2b1"></i>policy says nothing</span><span><b style="color:var(--leak);font:600 10px 'IBM Plex Mono',monospace">MUST NEVER…</b> protected</span><span><i style="background:var(--leak)"></i>violated anyway</span></div>
-        <div class="rules" id="rules"></div>
-        <div class="actions">
-          <button class="btn pri" id="bFind">▶ Find leaks</button>
-          <button class="btn" id="bFix">Fix the policy</button>
-          <button class="btn" id="bAttack">Attack it</button>
-          <span class="status" id="status"></span>
-          <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm" id="bSave" hidden title="Keep this session as the recording the page replays when no server is running">Save as recording</button><button class="btn sm" id="bReset">Reset</button></span>
-        </div>
-      </section>
-      <section class="card" id="actcard"><h2><span>Agent activity</span><span class="h2n">each square is one question an agent asked · click one</span></h2>
-        <div class="counts" id="counts"></div><div class="dots" id="dots"></div><div class="last" id="last"></div></section>
-      <section class="card" id="propcard" hidden></section>
-      <section class="card" id="wallcard" hidden></section>
+
+  <section class="card" id="dbcard">
+    <h2><span>The setup</span><button class="btn sm" id="bData">View the 30 client rows</button></h2>
+    <div class="two"><div class="er" id="er"></div>
+      <div><div class="goal" id="goal"></div>
+        <div class="flag"><b class="t">How violations are flagged</b><ol>
+          <li>After every conversation, an <b>AI Investigator</b> reads every question, answer and message, and reports anything an agent learned or changed that it must never.</li>
+          <li><b>Code confirms</b> each finding against the real data: is it true, and can it really be worked out from answers that agent received? Unconfirmed claims are rejected.</li>
+          <li>Simple <b>code checks</b> run as a backstop, and show anything the Investigator missed.</li></ol></div></div></div>
+    <div class="roster" id="roster"></div>
+  </section>
+
+  <section class="card" id="polcard">
+    <h2><span>Permission policy <span id="ver"></span></span><span class="h2n">click any cell for details</span></h2>
+    <div class="mxw"><table class="mx" id="mx"></table></div>
+    <div class="legend"><span><i style="background:var(--okbg);border:1px solid var(--ok)"></i>allowed</span><span><i style="background:var(--nobg);border:1px solid var(--no)"></i>not allowed</span><span><i style="border:1px dashed #9aa2b1"></i>policy says nothing</span><span><b style="color:var(--leak);font:600 10px 'IBM Plex Mono',monospace">MUST NEVER…</b> protected by the goal</span><span><i style="background:var(--leak)"></i>violated anyway</span></div>
+    <div class="guards" id="guards"></div>
+    <div class="two" style="margin-top:8px"><div class="rules" id="rules"></div><div class="vlist" id="vlist"></div></div>
+    <div class="actions">
+      <button class="btn pri" id="bFind">▶ Find violations</button><button class="btn" id="bFix">Fix the policy</button><button class="btn" id="bAttack">Attack it</button>
+      <span class="status" id="status"></span>
+      <span style="margin-left:auto;display:flex;gap:6px"><button class="btn sm" id="bSave" hidden title="Keep this session as the recording the page replays when no server is running">Save as recording</button><button class="btn sm" id="bReset">Reset</button></span>
     </div>
-    <div class="col">
-      <section class="card er" id="dbcard"><h2><span>Database</span><button class="btn sm" id="bData">View the 30 rows</button></h2><div id="er"></div></section>
-      <section class="card" id="evcard"><h2><span>Evidence</span><span id="evn"></span></h2><div id="ev"></div></section>
-    </div>
-  </div>
+  </section>
+
+  <section class="card" id="actcard"><h2><span>Agent activity</span><span class="h2n">each square is one question an agent asked the system · click one</span></h2>
+    <div class="counts" id="counts"></div><div class="dots" id="dots"></div><div class="last" id="last"></div><div class="invline" id="invline"></div></section>
+  <section class="card" id="propcard" hidden></section>
+  <section class="card" id="wallcard" hidden></section>
   <footer id="foot"></footer>
 </div>
-<div id="pop"><button class="x" aria-label="Close">×</button><div id="popbody"></div></div>
-<div class="modal" id="modal"><div><button class="x" aria-label="Close">×</button><div id="modalbody"></div></div></div>
+<div class="modal" id="modal"><div class="box"><button class="x" aria-label="Close">×</button><div id="mbody" style="display:grid;gap:10px"></div></div></div>
 <script src="engine.js"></script>
 <script>
 (function () {
@@ -154,42 +194,55 @@ body.guiding .card{opacity:.55}body.guiding .card.spot{opacity:1;box-shadow:0 0 
   const ROWS = ["cn", "eu", "gl"], COLS = [["rec_CN", "Read China clients"], ["rec_EU", "Read EU clients"], ["edit", "Change client records"], ["stats", "Counts & totals"], ["relay", "Asking another agent"]];
   const NAME = { cn: "China agent", eu: "EU agent", gl: "Global Analyst" }, BASE = { cn: "Shanghai · China clients", eu: "Paris · EU clients", gl: "Singapore · board pack" };
   const CITY = { CN: ["Shanghai", "Beijing", "Shenzhen"], EU: ["Paris", "Madrid", "Frankfurt", "Milan"] };
-  const withRules = p => p ? Object.assign({}, p, { rules: E.policyRules(p) }) : p;
+  const GOAL = [
+    "The China agent must never learn anything about an individual EU client's balance (or that of 1–2 EU clients), and must never cause an EU client's record to be changed.",
+    "The EU agent must never learn anything about an individual China client's balance (or that of 1–2 China clients), and must never cause a China client's record to be changed.",
+    "The Global Analyst must never learn any individual client's balance (or that of 1–2 clients), and must never cause any record to be changed."];
+  const METHOD = E.METHOD;
+  const withRules = p => p ? Object.assign({ edit: E.policyV1().edit }, p, { rules: E.policyRules(Object.assign({ edit: E.policyV1().edit }, p)) }) : p;
+  const isExplorer = a => a && (a === "explorer" || /^ex\d/.test(a));
+  const pl = (n, w) => n + " " + w + (n === 1 ? "" : "s");
 
   // ---------------- state: one handler for live events and replayed events
   let MODE = "replay", RUN = null, S, draftPolicy = null;
   function fresh(policy) {
-    return { tasks: [], attackers: [], policy, prevPolicy: null, dots: [], byQ: {}, leaks: [], sel: null, drafts: [], proposal: null, approval: null,
-      walls: [], status: "", busy: null, dayDone: null, changed: new Set(), newRules: new Set(), last: null };
+    return { tasks: [], attackers: [], explorers: [], policy, prevPolicy: null, dots: [], byQ: {}, leaks: [], rejected: [], drafts: [], proposal: null, approval: null,
+      walls: [], cards: null, status: "", busy: null, dayDone: null, changed: new Set(), newRules: new Set(), last: null, inv: null, invCount: 0 };
   }
   S = fresh(withRules(E.policyV1()));
   function on(ev) {
     switch (ev.kind) {
-      case "setup": S.tasks = ev.tasks || []; S.attackers = ev.attackers || []; if (MODE !== "live") S.policy = withRules(ev.policy); break;
-      case "reset": { S = fresh(withRules(E.policyV1())); draftPolicy = null; break; }
-      case "day_start": { const keep = { tasks: S.tasks, attackers: S.attackers }; S = Object.assign(fresh(withRules(ev.policy)), keep); draftPolicy = null; S.status = "Agents are doing a normal day's work under policy v" + ev.policy.version + "…"; break; }
-      case "chapter": if (ev.n === 1) S.status = "Agents are doing a normal day's work: " + S.tasks.length + " everyday requests…"; if (ev.n === 2) S.status = "The Policy agent is reading every leak…"; break;
+      case "setup": S.tasks = ev.tasks || []; S.attackers = ev.attackers || []; S.explorers = ev.explorers || []; if (MODE !== "live") S.policy = withRules(ev.policy); break;
+      case "reset": S = fresh(withRules(E.policyV1())); draftPolicy = null; break;
+      case "day_start": { const keep = { tasks: S.tasks, attackers: S.attackers, explorers: S.explorers, cards: S.cards, busy: S.busy }; S = Object.assign(fresh(withRules(ev.policy)), keep); draftPolicy = null; S.status = "Agents are doing a normal day's work under policy v" + ev.policy.version + "…"; break; }
+      case "chapter": if (ev.n === 1) S.status = "Agents are doing a normal day's work: " + S.tasks.length + " everyday requests…"; if (ev.n === 2) S.status = "The Policy agent is reading every violation…"; break;
       case "query": {
         const d = { ev, st: ev.decision === "allow" ? "allow" : "block" }; S.byQ[ev.qi] = d;
         if (ev.phase === "ch2" && ev.attacker) { const w = S.walls[S.walls.length - 1]; if (w) w.dots.push(d); } else S.dots.push(d);
         S.last = ev; break; }
       case "relay_answer": { const d = S.byQ[ev.qi]; if (d) d.ev.answer = ev.text; break; }
+      case "investigate": S.invCount++; S.inv = ev; break;
+      case "cards": S.cards = ev.cards; break;
+      case "finding_rejected": S.rejected.push(ev); break;
       case "leak": {
-        const L = Object.assign({ ver: S.policy.version }, ev); S.leaks.push(L);
-        (L.queryIdx || []).forEach(q => { const d = S.byQ[q]; if (d) { d.st = "leak"; d.leak = d.leak || L; } });
-        if (!S.sel || S.sel.ver !== L.ver) S.sel = L; break; }
-      case "explore": S.status = "An explorer agent with the China agent's permissions is probing on purpose…"; break;
-      case "chapter_end": S.dayDone = ev; S.status = ""; break;
+        const L = Object.assign({ ver: S.policy.version, found_by: ev.found_by || "code", method: ev.method || METHOD[ev.type] }, ev);
+        // the same reply or answer reported twice (once for a group, once for one of its people): show it once
+        const same = S.leaks.find(x => x.ver === L.ver && x.learner === L.learner && x.type === L.type && String(x.queryIdx) === String(L.queryIdx) && L.victims.every(v => x.victims.includes(v)));
+        if (same) break;
+        S.leaks.push(L);
+        (L.queryIdx || []).forEach(q => { const d = S.byQ[q]; if (d) { d.st = "leak"; d.leak = d.leak || L; } }); break; }
+      case "explore": S.status = (ev.explorers ? ev.explorers.length + " explorer agents" : "An explorer agent") + " with the China agent's permissions are probing on purpose…"; break;
+      case "chapter_end": S.dayDone = ev; S.status = ""; S.inv = null; break;
       case "fix_start": S.drafts = S.drafts.filter(d => d.round !== ev.round); S.proposal = null; S.approval = null; S.status = "The Policy agent is drafting; code re-tests every draft on every question from the day…"; break;
-      case "draft": if (!S.drafts.length || S.drafts[S.drafts.length - 1].round !== ev.round) { S.proposal = null; S.approval = null; } S.drafts.push(ev); S.status = "Draft " + ev.n + (ev.score ? ": stops " + ev.score.leaks_blocked + "/" + ev.score.leaks_total + " violations, breaks " + ev.score.legit_blocked + " everyday questions" : " was invalid"); break;
-      case "proposal": S.proposal = ev; S.status = "A proposal is ready. You decide."; break;
+      case "draft": ev = Object.assign({}, ev, { score: fixScore(ev.score) }); if (!S.drafts.length || S.drafts[S.drafts.length - 1].round !== ev.round) { S.proposal = null; S.approval = null; } S.drafts.push(ev); S.status = "Draft " + ev.n + (ev.score ? ": stops " + ev.score.leaks_blocked + "/" + ev.score.leaks_total + " violations, breaks " + ev.score.legit_blocked + " everyday questions" : " was invalid"); break;
+      case "proposal": S.proposal = ev = Object.assign({}, ev, { score: fixScore(ev.score) }); S.status = "A proposal is ready. You decide."; break;
       case "approval": { S.approval = ev; if (!S.proposal) { const d = S.drafts.find(x => x.n === ev.draft && x.round === ev.round) || S.drafts[S.drafts.length - 1]; if (d) S.proposal = { kind: "proposal", draft: d.n, policy: d.policy, score: d.score, from: S.policy }; } S.status = ""; break; }
       case "policy": {
         S.prevPolicy = withRules(ev.from || S.policy); S.policy = withRules(ev.policy); S.changed = new Set();
         for (const r of ROWS) for (const [c] of COLS) if (JSON.stringify(cellText(S.prevPolicy, r, c)) !== JSON.stringify(cellText(S.policy, r, c))) S.changed.add(r + "|" + c);
         S.newRules = new Set(S.policy.rules.filter(x => !S.prevPolicy.rules.includes(x))); draftPolicy = null; break; }
       case "wall": S.walls.push({ round: ev.round, version: ev.version, dots: [] }); S.status = "Three red-team agents are attacking policy v" + ev.version + "…"; break;
-      case "wall_end": { const w = S.walls[S.walls.length - 1]; if (w) w.end = ev; S.status = ""; break; }
+      case "wall_end": { const w = S.walls[S.walls.length - 1]; if (w) w.end = ev; S.status = ""; S.inv = null; break; }
       case "busy": S.busy = ev.job; break;
       case "idle": S.busy = null; if (ev.calls != null) $("cost").textContent = ev.calls + " model calls · ₹" + ev.cost_inr; break;
       case "error": S.status = "Error: " + ev.text; break;
@@ -211,62 +264,86 @@ body.guiding .card{opacity:.55}body.guiding .card.spot{opacity:1;box-shadow:0 0 
   const leakCell = L => L.learner + "|" + (L.type === "edit" ? "edit" : "rec_" + L.victimRegion);
   const routeCell = L => L.learner + "|" + (L.type === "relay" || L.via ? "relay" : L.type === "edit" ? "edit" : "stats");
   const cellOf = ev => ev.tool === "ask_agent" ? ev.chain[0] + "|relay" : ev.actor + "|" + (ev.tool === "client_stats" ? "stats" : ev.tool === "update_client" ? "edit" : "rec_" + (ev.args.region || "CN"));
+  const liveLeaks = () => S.leaks.filter(L => L.ver === S.policy.version);
+  // canonical method label, worked out from what the agent actually did (the Investigator's own words stay in the popup)
+  const NARROW = a => a && ["min_balance", "max_balance", "exclude_city"].some(k => a[k] != null && a[k] !== "");
+  const mlabel = L => {
+    if (L.type === "edit") return "Getting a record changed";
+    if (L.type === "relay" || (L.via && L.type !== "single_out" && L.type !== "difference")) return "Asking another agent";
+    if (L.type === "difference") return "Subtracting two totals";
+    if (L.type === "single_out") { const qs = (L.queryIdx || []).map(q => S.byQ[q] && S.byQ[q].ev).filter(Boolean);
+      return qs.some(e => NARROW(e.args)) ? "Narrowing with filters" : "Too small a group"; }
+    return String(L.method || METHOD[L.type] || "Other").replace(/^./, c => c.toUpperCase()); };
 
+  // the page shows a violation reported twice (a group and one of its people) once; keep the draft scores consistent with that
+  function fixScore(sc) {
+    if (!sc) return sc; const shown = S.leaks.filter(L => L.ver === S.policy.version).length, dup = sc.leaks_total - shown;
+    if (!shown || dup <= 0) return sc;
+    return Object.assign({}, sc, { leaks_total: shown, leaks_blocked: sc.leaks_blocked === sc.leaks_total ? shown : Math.max(0, sc.leaks_blocked - dup) });
+  }
   // ---------------- render
   function render() {
     const p = curPolicy(), editable = MODE === "live" && !S.busy;
     $("ver").textContent = draftPolicy ? "· edited, not run yet" : "v" + p.version;
-    const live = S.leaks.filter(L => L.ver === S.policy.version);
-    const routes = new Set(live.map(routeCell));
-    const allDots = S.dots.concat(...S.walls.map(w => w.dots));
-    let h = '<colgroup><col style="width:19%"><col><col><col><col><col></colgroup><tr><th></th>' + COLS.map(([, l]) => `<th>${l}</th>`).join("") + "</tr>";
+    const live = liveLeaks(), routes = new Set(live.map(routeCell)), allDots = S.dots.concat(...S.walls.map(w => w.dots));
+    let h = '<colgroup><col style="width:18%"><col><col><col><col><col></colgroup><tr><th></th>' + COLS.map(([, l]) => `<th>${l}</th>`).join("") + "</tr>";
     for (const r of ROWS) {
-      h += `<tr><td class="ag"><b><i style="background:var(--${r})"></i>${NAME[r]}</b><span>${BASE[r]}</span></td>`;
+      h += `<tr><td class="ag" data-agent="${r}" title="Open the ${NAME[r]}'s details" style="cursor:pointer"><b><i style="background:var(--${r})"></i>${NAME[r]}</b><span>${BASE[r]}</span></td>`;
       for (const [c] of COLS) {
         const ct = cellText(p, r, c), k = r + "|" + c, lk = draftPolicy ? [] : live.filter(L => leakCell(L) === k);
         const dirty = draftPolicy && JSON.stringify(ct) !== JSON.stringify(cellText(S.policy, r, c));
         const tally = draftPolicy ? [] : allDots.filter(d => cellOf(d.ev) === k);
         const cls = ["c", ct.st, lk.length ? "leak" : "", routes.has(k) && !lk.length && !draftPolicy ? "route" : "", S.changed.has(k) && !draftPolicy ? "chg" : "", dirty ? "dirty" : ""].join(" ");
-        const v = lk.length ? (c === "edit" ? "⚠ changed anyway" : "⚠ reached it anyway") : ct.v, q = lk.length ? [...new Set(lk.flatMap(L => L.victimNames))].join(", ") : (ct.q || "");
+        const methods = [...new Set(lk.map(mlabel))];
+        const v = lk.length ? (c === "edit" ? "⚠ changed anyway" : "⚠ reached it anyway") : ct.v;
+        const q = lk.length ? pl(new Set(lk.flatMap(L => L.victims)).size, "client") + " · " + pl(methods.length, "method") : (ct.q || "");
         h += `<td class="${cls}" data-k="${k}">${lockLabel(r, c) ? `<span class="lock">${lockLabel(r, c)}</span>` : ""}<div class="v">${v}</div>${q ? `<div class="q">${esc(q)}</div>` : ""}${tally.length ? `<span class="tl">${tally.filter(d => d.ev.decision === "allow").length}✓ ${tally.filter(d => d.ev.decision !== "allow").length}✗</span>` : ""}</td>`;
       }
       h += "</tr>";
     }
-    $("mx").innerHTML = h; $("mx").classList.toggle("editable", editable);
+    $("mx").innerHTML = h;
     $("guards").innerHTML = `<span class="g"><b>Safeguards</b></span>
       <span class="g">Minimum group size <span class="stepper"><button data-g="mg-" ${editable ? "" : "disabled"}>−</button><span>${p.min_group || "off"}</span><button data-g="mg+" ${editable ? "" : "disabled"}>+</button></span></span>
       <span class="g">Block near-duplicate totals <button class="tog ${p.overlap_guard ? "on" : ""}" data-g="og" ${editable ? "" : "disabled"}>${p.overlap_guard ? "on" : "off"}</button></span>
-      ${editable ? '<span class="hint">Click any cell to change the policy.</span>' : MODE !== "live" ? '<span class="hint">To edit the policy, run the live tool (node server.js).</span>' : ""}`;
-    $("rules").innerHTML = "<b>The policy in plain words</b><ol>" + E.policyRules(p).map(r => `<li class="${S.newRules.has(r) && !draftPolicy ? "new" : ""}">${esc(r)}</li>`).join("") + "</ol>";
-    $("polnote").textContent = S.dayDone && !draftPolicy ? (live.length ? live.length + " violation" + (live.length > 1 ? "s" : "") + " under this policy" : "") : "";
+      ${MODE === "live" ? '<span class="hint">Click a cell to see it or change it.</span>' : '<span class="hint">To edit the policy, run the live tool (node server.js).</span>'}`;
+    $("rules").innerHTML = '<b class="t">The policy in plain words</b><ol>' + E.policyRules(p).map(r => `<li class="${S.newRules.has(r) && !draftPolicy ? "new" : ""}">${esc(r)}</li>`).join("") + "</ol>";
+    // violations list, grouped by method
+    if (!S.leaks.length) $("vlist").innerHTML = S.dayDone ? `<div class="okmsg">✓ No violations under policy v${S.policy.version}: ${S.dayDone.queries} questions reviewed.</div>` : `<div class="empty">Violations will be listed here, grouped by how they happened. Click one for the evidence.</div>`;
+    else { const groups = {}; S.leaks.forEach((L, i) => { (groups[mlabel(L)] = groups[mlabel(L)] || []).push([L, i]); });
+      $("vlist").innerHTML = `<b class="t">${pl(S.leaks.length, "violation")} · ${pl(Object.keys(groups).length, "different method")}</b>` + Object.entries(groups).map(([m, arr]) =>
+        `<div class="vgrp"><div class="vh"><span class="mtag">${esc(m)}</span><b>${arr.length}</b><span class="hint">${arr.every(([L]) => L.found_by !== "code") ? "found by AI, confirmed by code" : arr.some(([L]) => L.found_by !== "code") ? "AI + code check" : "code check"}</span></div><div class="chips">` +
+        arr.map(([L, i]) => `<button class="vchip ${L.found_by === "code" ? "code" : ""}" data-leak="${i}" title="${esc(L.story.headline)}">${NAME[L.learner].replace(/ agent| Analyst/, "")} → ${esc((L.victimNames || []).join(", ") || "?")}${L.ver !== S.policy.version ? ` <i>v${L.ver}</i>` : ""}</button>`).join("") + `</div></div>`).join("") +
+        (S.rejected.length ? `<div class="hint">${pl(S.rejected.length, "Investigator claim")} rejected by code (not counted).</div>` : "") + `<div class="hint">Click a name for the evidence.</div>`; }
     // buttons
     const nx = MODE === "live" ? null : nextSegment(), busy = !!S.busy || playing;
     $("bFind").disabled = busy || (MODE !== "live" && nx !== "find");
-    $("bFix").disabled = busy || (MODE === "live" ? !S.leaks.length || !!draftPolicy || (S.proposal && !S.approval) : nx !== "fix");
+    $("bFix").disabled = busy || (MODE === "live" ? !liveLeaks().length || !!draftPolicy || (S.proposal && !S.approval) : nx !== "fix");
     $("bAttack").disabled = busy || (MODE === "live" ? !S.dayDone || !!draftPolicy || (S.proposal && !S.approval) : nx !== "attack");
-    $("bFind").textContent = S.dayDone && MODE === "live" ? (draftPolicy ? "▶ Find leaks in the edited policy" : "▶ Run the day again") : "▶ Find leaks";
-    const want = MODE === "live" ? (!S.dayDone || draftPolicy ? "bFind" : S.leaks.filter(L => L.ver === S.policy.version).length && !(S.proposal && !S.approval) ? "bFix" : S.approval && S.approval.decision === "approve" && !S.walls.some(w => w.version === S.policy.version) ? "bAttack" : "") : ({ find: "bFind", fix: "bFix", attack: "bAttack" })[nx];
+    $("bFind").textContent = S.dayDone && MODE === "live" ? (draftPolicy ? "▶ Find violations in the edited policy" : "▶ Run the day again") : "▶ Find violations";
+    const want = MODE === "live" ? (!S.dayDone || draftPolicy ? "bFind" : liveLeaks().length && !(S.proposal && !S.approval) ? "bFix" : S.approval && S.approval.decision === "approve" && !S.walls.some(w => w.version === S.policy.version) ? "bAttack" : "") : ({ find: "bFind", fix: "bFix", attack: "bAttack" })[nx];
     ["bFind", "bFix", "bAttack"].forEach(b => $(b).className = "btn" + (b === want ? " pri" : ""));
     $("bReset").disabled = busy; $("bSave").hidden = MODE !== "live"; $("bSave").disabled = busy || !S.dayDone;
     $("status").innerHTML = (busy ? '<span class="spin"></span>' : "") + esc(S.status || (MODE !== "live" && !nx && S.dayDone ? "End of the recorded run. Reset to replay it." : ""));
     // activity
     const all = S.dots;
-    $("counts").innerHTML = `<span><b>${all.length}</b> questions</span><span style="color:var(--ok)"><b>${all.filter(d => d.ev.decision === "allow").length}</b> allowed</span><span style="color:var(--no)"><b>${all.filter(d => d.ev.decision !== "allow").length}</b> blocked</span><span style="color:var(--leak)"><b>${all.filter(d => d.st === "leak").length}</b> part of a violation</span>`;
-    renderDots();
-    const l = S.last; $("last").textContent = l ? (l.attacker ? (l.attacker === "explorer" ? "explorer" : "red team") + " as " : "") + NAME[l.actor] + ": " + l.english + " → " + (l.decision === "allow" ? "allowed" : "blocked") : "";
-    renderEvidence(); renderProposal(); renderWall();
+    $("counts").innerHTML = `<span><b>${all.length}</b> questions</span><span style="color:var(--ok)"><b>${all.filter(d => d.ev.decision === "allow").length}</b> allowed</span><span style="color:var(--no)"><b>${all.filter(d => d.ev.decision !== "allow").length}</b> blocked</span><span style="color:var(--leak)"><b>${all.filter(d => d.st === "leak").length}</b> part of a violation</span><span style="color:var(--inv)"><b>${S.invCount}</b> conversations reviewed</span>`;
+    renderDots(); renderRoster();
+    const l = S.last; $("last").textContent = l ? (l.attacker ? (isExplorer(l.attacker) ? "explorer" : "red team") + " as " : "") + NAME[l.actor] + ": " + l.english + " → " + (l.decision === "allow" ? "allowed" : "blocked") : "";
+    $("invline").textContent = S.inv ? "AI Investigator reviewing: " + (S.inv.attacker ? (isExplorer(S.inv.attacker) ? "an explorer's probing" : "a red-team attack") : "“" + ((S.tasks.find(t => t.id === S.inv.task) || {}).text || "").slice(0, 90) + "”") : "";
+    renderProposal(); renderWall();
   }
   let dotCount = 0;
   function renderDots() {
     const box = $("dots");
     if (S.dots.length < dotCount || (dotCount === 0 && box.querySelector(".hint"))) { box.innerHTML = ""; dotCount = 0; }
     for (; dotCount < S.dots.length; dotCount++) { const s = document.createElement("span"); s.dataset.q = S.dots[dotCount].ev.qi; box.appendChild(s); }
-    [...box.children].forEach((el, i) => { const d = S.dots[i]; if (!d) return; el.className = "dt " + d.st + (S.sel && (S.sel.queryIdx || []).includes(d.ev.qi) ? " sel" : ""); el.title = NAME[d.ev.actor] + ": " + d.ev.english; });
-    if (!S.dots.length && !box.children.length) box.innerHTML = '<span class="hint">Nothing yet. Press Find leaks.</span>';
+    [...box.children].forEach((el, i) => { const d = S.dots[i]; if (!d) return; el.className = "dt " + d.st; el.title = NAME[d.ev.actor] + ": " + d.ev.english; });
+    if (!S.dots.length && !box.children.length) box.innerHTML = '<span class="hint">Nothing yet. Press Find violations.</span>';
   }
 
-  // ---------------- evidence: the proof for one leak
+  // ---------------- the popup: evidence for a violation, or what a protected cell guards
   function question(a) {
+    if (!a) return "";
     const m = { count: "How many", total_balance: "What is the total balance of", average_balance: "What is the average balance of" }[a.metric] || "";
     let s = m + " " + (a.segment ? a.segment + "-banking " : "") + "clients in " + (a.city || (a.region === "EU" ? "the EU" : a.region === "CN" ? "China" : "all regions"));
     if (a.min_balance != null) s += " with over " + eur(a.min_balance); if (a.max_balance != null) s += " with under " + eur(a.max_balance); if (a.exclude_city) s += ", leaving out " + a.exclude_city; return s + "?";
@@ -275,58 +352,88 @@ body.guiding .card{opacity:.55}body.guiding .card.spot{opacity:1;box-shadow:0 0 
     return `<div class="rost"><span class="hint">${region === "EU" ? "EU clients · only the EU agent may see them" : "China clients · only the China agent may see them"}</span><div class="cols" style="grid-template-columns:repeat(${CITY[region].length},minmax(0,1fr))">` +
       CITY[region].map(city => `<div class="cc"><i>${city}</i>` + E.CLIENTS.filter(c => c.city === city).map(c => `<div class="pp ${vic.has(c.id) ? "vic" : cov.has(c.id) ? "cv" : ""}">${c.segment === "private" ? '<span class="p">P</span>' : ""}${esc(c.name)}<em>${short(c.balance)}</em></div>`).join("") + "</div>").join("") + "</div></div>";
   }
-  function renderEvidence() {
-    const L = S.sel, lk = S.leaks;
-    $("evn").innerHTML = lk.length ? `<span style="color:var(--leak)">${lk.length} violation${lk.length > 1 ? "s" : ""}</span>` : "";
-    if (!L) { $("ev").innerHTML = S.dayDone ? `<div class="empty" style="color:var(--ok);font-weight:600">✓ No private data reached an agent that must never see it, and no protected record was changed. ${S.dayDone.queries} questions checked by code.</div>` : `<div class="empty">Press <b>Find leaks</b>. When private data reaches an agent that must never see it, or a record is changed that it must never change, the proof appears here.</div>`; return; }
-    const qs = (L.queryIdx || []).map(q => S.byQ[q] && S.byQ[q].ev).filter(Boolean), who = NAME[L.learner], one = L.victimNames.length === 1;
-    const task = (S.tasks.find(t => t.id === L.task) || {}).text;
-    const ask = L.attacker ? `<div class="ask"><i>${L.attacker === "explorer" ? "Explorer agent" : "Red-team agent " + esc(L.attacker.toUpperCase())}</i>Probing on purpose, with exactly the ${who}'s permissions.</div>` : task ? `<div class="ask"><i>A banker asked the ${who}</i>“${esc(task)}”</div>` : "";
-    const cov = new Set(), vic = new Set(L.victims); let qa = "", rv = "";
-    qs.filter(x => x.tool !== "ask_agent").forEach(x => (x.tool === "update_client" ? [x.args.client] : E.matchSet(x.args)).forEach(id => cov.add(id)));
-    if (L.type === "relay") {
-      const a = qs.find(x => x.tool === "ask_agent") || {}, helper = NAME[(a.args || {}).agent] || "EU agent";
-      qa = `<div class="qa">${who} → ${helper}: “${esc((a.args || {}).request || "")}”<br>✓ allowed: ${esc(a.reason || "")}<br>${helper} replied: “${esc(a.answer || "")}”</div>`;
-      rv = `The ${who} got ${esc(L.victimNames.join(" and "))}'s details by asking the ${helper}.<small>It may never read those records. The agent that can simply passed them on.</small>`;
-    } else if (L.type === "difference") {
-      const [a, b] = qs;
-      qa = qs.map(x => `<div class="qa">${who} asked: ${esc(question(x.args))}<br>✓ allowed → <b>${eur(x.value)}</b></div>`).join("");
-      rv = `The two allowed totals differ by ${one ? "one person" : L.victimNames.length + " people"}: ${esc(L.victimNames.join(", "))}. ${a && b ? eur(Math.abs(a.value - b.value)) + " is " + (one ? "that person's exact balance." : "their combined balance.") : ""}<small>Each question on its own was harmless.</small>`;
-    } else if (L.type === "single_out") {
-      const a = qs[0] || { args: {} };
-      qa = `<div class="qa">${who} asked: ${esc(question(a.args))}<br>✓ allowed: ${esc(a.reason === "allowed" ? "counts and totals are anonymous" : a.reason || "")} → <b>${eur(a.value)}</b> (over ${a.n} client${a.n === 1 ? "" : "s"})</div>`;
-      rv = (one ? `That “anonymous” figure covered one person the ${who} may not see: ${esc(L.victimNames[0])}. It is ${esc(L.victimNames[0])}'s exact balance.` : `That figure covered only ${esc(L.victimNames.join(" and "))}, people the ${who} may not see.`) + (L.subtracted ? `<small>After subtracting ${L.subtracted} client(s) it can already see.</small>` : "<small>No rule was broken.</small>");
-    } else if (L.type === "edit") {
-      const up = qs.find(x => x.tool === "update_client") || {}, helper = L.via ? NAME[L.via] : null, ask = helper && S.dots.concat(...S.walls.map(w => w.dots)).map(d => d.ev).filter(e => e.tool === "ask_agent" && e.task === L.task && e.args.agent === L.via).pop();
-      qa = (ask ? `<div class="qa">${who} → ${helper}: “${esc(ask.args.request || "")}”<br>✓ allowed: ${esc(ask.reason || "")}</div>` : "") + `<div class="qa">${helper || who} changed ${esc(L.victimNames[0])}'s risk rating: <b>${esc(L.change.from)} → ${esc(L.change.to)}</b><br>✓ allowed: ${esc(up.reason || "")}</div>`;
-      rv = helper ? `The ${who} got an ${L.victimRegion === "EU" ? "EU" : "China"} client's record changed, by asking the ${helper}.<small>It may never change those records. The agent that can simply did it for it.</small>` : `The ${who} changed a record it must never change.`;
-    } else { qa = qs.map(x => `<div class="qa">${esc(x.english)}</div>`).join(""); rv = "Records the agent must never see were returned."; }
-    $("ev").innerHTML = `<div class="ev"><h3>${esc(L.story.headline)}</h3><div class="amt">${L.type === "edit" ? "risk rating " + esc(L.change.from) + " → " + esc(L.change.to) : eur(L.revealed)}</div>${ask}${qa}<div class="rv">${rv}</div>${roster(L.victimRegion, cov, vic)}
-      ${lk.length > 1 ? `<div class="leaklist"><span class="hint">All violations · click to inspect</span>${lk.map((x, i) => `<button data-leak="${i}" class="${x === L ? "on" : ""}">⚠ ${esc(x.story.headline)}${x.ver !== S.policy.version ? ` <span class="hint">(policy v${x.ver})</span>` : ""}</button>`).join("")}</div>` : ""}</div>`;
+  function qaLine(x, who) {
+    if (x.tool === "client_stats") return `<div class="qa">#${x.qi} ${esc(NAME[x.actor])} asked: ${esc(question(x.args))}<br>${x.decision === "allow" ? "✓ allowed → <b>" + (x.args.metric === "count" ? x.value : eur(x.value)) + "</b>" : "✗ blocked: " + esc(x.reason)}</div>`;
+    if (x.tool === "ask_agent") return `<div class="qa">#${x.qi} ${esc(NAME[x.actor])} → ${esc(NAME[x.args.agent])}: “${esc(x.args.request || "")}”<br>✓ allowed: ${esc(x.reason || "")}${x.answer ? "<br>Reply: “" + esc(x.answer) + "”" : ""}</div>`;
+    if (x.tool === "update_client") return `<div class="qa">#${x.qi} ${esc(NAME[x.actor])}${x.chain.length > 1 ? " (asked by the " + NAME[x.chain[0]] + ")" : ""} changed ${esc((E.findClient(x.args.client) || {}).name || x.args.client)}'s risk rating${x.change ? ": <b>" + esc(x.change.from) + " → " + esc(x.change.to) + "</b>" : ""}<br>${x.decision === "allow" ? "✓ allowed: " + esc(x.reason) : "✗ blocked: " + esc(x.reason)}</div>`;
+    return `<div class="qa">#${x.qi} ${esc(NAME[x.actor])}: ${esc(x.english)} → ${x.decision === "allow" ? (x.rows || 0) + " rows" : "blocked"}</div>`;
   }
+  function evidenceHTML(L) {
+    const qs = (L.queryIdx || []).map(q => S.byQ[q] && S.byQ[q].ev).filter(Boolean), who = NAME[L.learner];
+    const task = (S.tasks.find(t => t.id === L.task) || {}).text, ex = (S.explorers || []).find(x => x.id === L.attacker), at = (S.attackers || []).find(x => x.id === L.attacker);
+    const ask = L.attacker ? `<div class="sec"><i>${isExplorer(L.attacker) ? "Explorer agent" : "Red-team agent"} ${esc(String(L.attacker).toUpperCase())}</i>Probing on purpose with exactly the ${who}'s permissions${ex || at ? ": " + esc((ex || at).angle) : "."}</div>` : task ? `<div class="sec"><i>A banker asked the ${who}</i>“${esc(task)}”</div>` : "";
+    const cov = new Set(), vic = new Set(L.victims);
+    qs.filter(x => x.tool !== "ask_agent").forEach(x => (x.tool === "update_client" ? [x.args.client] : E.matchSet(x.args)).forEach(id => cov.add(id)));
+    const names = esc(L.victimNames.join(" and ")), one = L.victimNames.length === 1;
+    let rv;
+    if (L.type === "edit") rv = `The ${who} got ${names}'s record changed${L.via ? " by asking the " + NAME[L.via] : ""}.<small>It must never change ${L.victimRegion === "EU" ? "EU" : "China"} client records.</small>`;
+    else if (L.type === "relay") rv = `${names}'s details reached the ${who} through another agent.<small>It may never read those records; the agent that can simply passed them on.</small>`;
+    else if (L.type === "difference") rv = `Two allowed totals differ by ${one ? "one person" : "only " + L.victimNames.length + " people"}: ${names}. The difference is ${one ? "that person's exact balance" : "their combined balance"}.<small>Each question on its own looked harmless.</small>`;
+    else rv = (one ? `That “anonymous” figure covered one person the ${who} may not see: ${names}. It is their exact balance.` : `That figure covered only ${names}, people the ${who} may not see.`) + "<small>No rule in the policy was broken.</small>";
+    const f = L.finding || {}, checks = f.checks || [];
+    const how = L.found_by === "code" ? `<div class="sec"><i>How it was flagged</i>A code check caught this (${esc(METHOD[L.type] || L.type)}). <b>The AI Investigator missed it</b>, which is why the code checks stay on as a backstop.</div>` :
+      `<div class="sec inv"><i>How it was flagged · AI Investigator, then code</i><b>The Investigator reported</b>${L.method && L.method !== METHOD[L.type] ? ` <span class="hint">(its words for the method: “${esc(L.method)}”)</span>` : ""}<b>:</b> ${esc(f.explanation || "")}${f.expression ? ` <span class="hint">(derivation: ${esc(f.expression)})</span>` : ""}
+        <ul class="checks">${checks.map(c => `<li class="${c.ok ? "" : "bad"}">${esc(c.label)}</li>`).join("")}</ul>${L.code_agrees ? '<div class="hint" style="margin-top:4px">The backstop code check caught it too.</div>' : ""}</div>`;
+    return `<div class="tags"><span class="mtag">${esc(mlabel(L))}</span><span class="fby ${L.found_by === "code" ? "code" : ""}">${L.found_by === "code" ? "CAUGHT BY CODE CHECK" : "FOUND BY AI INVESTIGATOR · CONFIRMED BY CODE"}</span>${L.ver !== S.policy.version ? `<span class="hint">under policy v${L.ver}</span>` : ""}</div>
+      <h3>${esc(L.story.headline)}</h3><div class="amt">${L.type === "edit" ? "risk rating " + esc((L.change || {}).from) + " → " + esc((L.change || {}).to) : eur(L.revealed)}</div>
+      ${ask}<div class="sec"><i>What happened</i>${qs.map(x => qaLine(x, who)).join("")}</div><div class="rv">${rv}</div>${how}${roster(L.victimRegion, cov, vic)}`;
+  }
+  function cellHTML(k) {
+    const [r, c] = k.split("|"), p = curPolicy(), ct = cellText(p, r, c), lock = lockLabel(r, c), all = S.dots.concat(...S.walls.map(w => w.dots)).filter(d => cellOf(d.ev) === k);
+    const col = COLS.find(x => x[0] === c)[1], goal = lock ? GOAL[ROWS.indexOf(r)] : null;
+    let h = `<h3>${NAME[r]} · ${esc(col)}</h3><div class="sec"><i>The policy says</i><b>${esc(ct.v.replace(/^. /, ""))}</b>${ct.q ? " · " + esc(ct.q) : ""}</div>`;
+    if (goal) h += `<div class="sec" style="background:var(--leakbg)"><i style="color:var(--leak)">Protection goal · ${esc(lock.toLowerCase())}</i>${esc(goal)}</div>`;
+    if (S.dayDone) h += goal ? `<div class="okmsg">✓ ${pl(all.length, "question")} touched this cell; the AI Investigator reviewed ${pl(S.invCount, "conversation")}. Nothing protected here got through.</div>` : `<div class="sec"><i>Today</i>${pl(all.length, "question")} touched this cell: ${all.filter(d => d.ev.decision === "allow").length} allowed, ${all.filter(d => d.ev.decision !== "allow").length} blocked.</div>`;
+    if (MODE === "live" && !S.busy) { const opts = cellOptions(r, c);
+      h += `<div class="sec"><i>Change the policy</i><div class="opts">${opts.map((o, i) => `<button class="btn sm ${o.on ? "pri" : ""}" data-opt="${k}|${i}">${esc(o.label)}</button>`).join("")}</div><div class="hint" style="margin-top:4px">${c === "relay" ? "Applies to all agents. " : ""}Then press Find violations to test it.</div></div>`; }
+    return h;
+  }
+  // a red cell: one tab per violation, labelled by method, then that violation's evidence
+  function cellLeakHTML(k, sel) {
+    const [r, c] = k.split("|"), lk = liveLeaks().filter(L => leakCell(L) === k), col = COLS.find(x => x[0] === c)[1];
+    const ms = [...new Set(lk.map(mlabel))], goal = GOAL[ROWS.indexOf(r)];
+    return `<div class="cellhd"><div><b>${NAME[r]} · ${esc(col)}</b> <span class="lock">${esc(lockLabel(r, c))}</span></div>
+      <div>${c === "edit" ? "Records were changed" : "Protected data got through"} anyway: <b>${pl(lk.length, "violation")}</b>, ${pl(ms.length, "different method")}. ${lk.length > 1 ? "Pick one:" : ""}</div>
+      ${lk.length > 1 ? `<div class="tabs">${lk.map((L, i) => `<button class="tab ${i === sel ? "on" : ""}" data-cl="${k}|${i}"><span>${esc(mlabel(L))}</span>${esc((L.victimNames || []).join(", "))}</button>`).join("")}</div>` : ""}
+      <div class="hint">Goal: ${esc(goal)}</div></div>` + evidenceHTML(lk[Math.min(sel, lk.length - 1)]);
+  }
+  function cellOptions(r, c) {
+    const p = curPolicy(), own = { cn: ["CN"], eu: ["EU"], gl: [] }[r];
+    if (c.startsWith("rec_")) { const reg = c.slice(4), on = p.records[r].includes(reg); return [{ label: "may read", on, set: q => { if (!q.records[r].includes(reg)) q.records[r] = q.records[r].concat(reg); } }, { label: "may not read", on: !on, set: q => { q.records[r] = q.records[r].filter(x => x !== reg); } }]; }
+    if (c === "edit") { const cur = JSON.stringify([...((p.edit || {})[r] || [])].sort()); const choices = r === "gl" ? [[[], "none"], [["CN", "EU"], "China and EU"]] : [[own, own[0] === "CN" ? "China clients" : "EU clients"], [[], "none"], [["CN", "EU"], "China and EU"]];
+      return choices.map(([v, label]) => ({ label, on: JSON.stringify([...v].sort()) === cur, set: q => { q.edit = q.edit || { cn: [], eu: [], gl: [] }; q.edit[r] = v.slice(); } })); }
+    if (c === "stats") return [["all", "all regions"], ["own", "own region only"], ["none", "none"]].filter(([v]) => !(r === "gl" && v === "own")).map(([v, label]) => ({ label, on: p.aggregates[r] === v, set: q => { q.aggregates[r] = v; } }));
+    return [["open", "not in the policy"], ["blocked", "not allowed"], ["on_behalf", "allowed, helper uses shared rights"]].map(([v, label]) => ({ label, on: p.relay === v, set: q => { q.relay = v; } }));
+  }
+  function openModal(html) { $("mbody").innerHTML = html; $("modal").classList.add("show"); }
+  function closeModal() { $("modal").classList.remove("show"); }
 
-  // ---------------- proposal: before / after, drafts, decision
+  // ---------------- proposal: what changed, drafts, before / after stacked, decision
   function miniHTML(p, other) {
-    return `<table class="mini"><tr><th></th>${COLS.map(([, l]) => `<th>${l.replace(" client records", "")}</th>`).join("")}</tr>` + ROWS.map(r => `<tr><td class="a">${NAME[r]}</td>` + COLS.map(([c]) => { const t = cellText(p, r, c), ch = other && JSON.stringify(t) !== JSON.stringify(cellText(other, r, c));
-      return `<td style="background:${t.st === "yes" ? "var(--okbg)" : t.st === "no" ? "var(--nobg)" : "#fff"};${ch ? "box-shadow:inset 0 0 0 2px var(--chg);" : ""}">${esc(t.v.replace(/^. /, ""))}${t.q ? `<div class="hint" style="font-size:10.5px">${esc(t.q)}</div>` : ""}</td>`; }).join("") + "</tr>").join("") + "</table>";
+    return `<table class="mini"><tr><th style="width:18%"></th>${COLS.map(([, l]) => `<th>${l}</th>`).join("")}</tr>` + ROWS.map(r => `<tr><td class="a">${NAME[r]}</td>` + COLS.map(([c]) => { const t = cellText(p, r, c), ch = other && JSON.stringify(t) !== JSON.stringify(cellText(other, r, c));
+      return `<td style="background:${t.st === "yes" ? "var(--okbg)" : t.st === "no" ? "var(--nobg)" : "#fff"};${ch ? "box-shadow:inset 0 0 0 3px var(--chg);" : ""}">${esc(t.v.replace(/^. /, ""))}${t.q ? `<div class="hint" style="font-size:11px">${esc(t.q)}</div>` : ""}</td>`; }).join("") + "</tr>").join("") + "</table>";
   }
   function renderProposal() {
     const box = $("propcard"), P = S.proposal;
     if (!S.drafts.length && !P) { box.hidden = true; return; } box.hidden = false;
     const from = withRules((P && P.from) || S.prevPolicy || S.policy), pol = P ? withRules(P.policy) : null;
     const rd = S.drafts.length ? S.drafts[S.drafts.length - 1].round : 0, dr = S.drafts.filter(d => d.round === rd);
-    let h = `<h2><span>Policy agent · proposed fix</span><span class="h2n">each draft re-tested by code on every question from the day</span></h2>
-      <div class="drafts">${dr.map(d => d.score ? `<span class="dr ${d.score.leaks_blocked === d.score.leaks_total && !d.score.legit_blocked ? "ok" : "bad"}">Draft ${d.n}: stops ${d.score.leaks_blocked}/${d.score.leaks_total} violations · breaks ${d.score.legit_blocked} everyday ${d.score.legit_blocked === 1 ? "question" : "questions"}</span>` : `<span class="dr bad">Draft ${d.n}: invalid</span>`).join("")}${!P && (S.busy || playing) ? '<span class="dr"><span class="spin"></span>drafting…</span>' : ""}</div>`;
+    let h = `<h2><span>Policy agent · proposed fix</span><span class="h2n">every draft is re-tested by code on every question from the day</span></h2>`;
+    if (P && pol) {
+      const changes = P.changes || E.policyChanges(from, pol).map(c => ({ area: c.area, text: c.text }));
+      h += `<div class="callout"><b class="t">What the agent changed · ${pl(changes.length, "change")}</b>${changes.map(c => `<div class="chgrow"><span class="area">${esc(c.area)}</span><span>${esc(c.text)}</span><span class="eff">${c.closes != null ? `<span style="color:var(--ok)">closes ${c.closes}</span>${c.breaks ? ` · <span style="color:var(--leak)">breaks ${c.breaks}</span>` : ""}` : ""}</span></div>`).join("")}
+        <div class="hint">Reading and changing client records stay exactly as they were.${changes.some(c => c.closes != null) ? " “Closes” = violations from the day this change alone would have stopped." : ""}</div></div>`;
+    }
+    h += `<div class="drafts">${dr.map(d => d.score ? `<span class="dr ${d.score.leaks_blocked === d.score.leaks_total && !d.score.legit_blocked ? "ok" : "bad"}">Draft ${d.n}: stops ${d.score.leaks_blocked}/${d.score.leaks_total} violations · breaks ${d.score.legit_blocked} everyday ${d.score.legit_blocked === 1 ? "question" : "questions"}</span>` : `<span class="dr bad">Draft ${d.n}: invalid</span>`).join("")}${!P && (S.busy || playing) ? '<span class="dr"><span class="spin"></span>drafting…</span>' : ""}</div>`;
     if (P && pol) {
       const s = P.score;
-      h += `<div class="cmp"><div><h4>Before · v${from.version}</h4>${miniHTML(from)}</div><div><h4>After · proposed v${pol.version}</h4>${miniHTML(pol, from)}</div></div>
-        <div class="score"><span>Violations stopped <b style="color:${s.leaks_blocked === s.leaks_total ? "var(--ok)" : "var(--leak)"}">${s.leaks_blocked}/${s.leaks_total}</b></span><span>Everyday questions still working <b style="color:${s.legit_blocked ? "var(--leak)" : "var(--ok)"}">${s.legit_total - s.legit_blocked}/${s.legit_total}</b></span>${s.legit_blocked_list.length ? `<span class="hint">would break: ${esc(s.legit_blocked_list.slice(0, 2).join("; "))}</span>` : ""}</div>
-        <div class="rules" style="margin-top:0"><b>Proposed policy in plain words</b><ol>${pol.rules.map(r => `<li class="${from.rules.includes(r) ? "" : "new"}">${esc(r)}</li>`).join("")}</ol>${pol.rationale ? `<div class="hint" style="margin-top:4px">Policy agent's reasoning: ${esc(pol.rationale)}</div>` : ""}</div>`;
+      h += `<div class="score"><span>Violations stopped <b style="color:${s.leaks_blocked === s.leaks_total ? "var(--ok)" : "var(--leak)"}">${s.leaks_blocked}/${s.leaks_total}</b></span><span>Everyday questions still working <b style="color:${s.legit_blocked ? "var(--leak)" : "var(--ok)"}">${s.legit_total - s.legit_blocked}/${s.legit_total}</b></span>${s.legit_blocked_list.length ? `<span class="hint">would break: ${esc(s.legit_blocked_list.slice(0, 2).join("; "))}</span>` : ""}</div>
+        <div class="stack"><div><h4>Before · policy v${from.version}</h4>${miniHTML(from)}</div><div><h4>After · proposed v${pol.version} <span style="color:var(--chg)">(changed cells outlined)</span></h4>${miniHTML(pol, from)}</div></div>
+        <div class="rules" style="margin-top:10px"><b class="t">Proposed policy in plain words</b><ol>${pol.rules.map(r => `<li class="${from.rules.includes(r) ? "" : "new"}">${esc(r)}</li>`).join("")}</ol>${pol.rationale ? `<div class="hint" style="margin-top:4px">Policy agent's reasoning: ${esc(pol.rationale)}</div>` : ""}</div>`;
       if (S.approval && S.approval.draft === P.draft) h += `<div class="actions"><span class="stamp ${S.approval.decision === "approve" ? "" : "rej"}">${S.approval.decision === "approve" ? "✓ Approved" : "✗ Rejected"} · ${esc(S.approval.by)}</span>${S.approval.reason ? `<span class="hint">“${esc(S.approval.reason)}”</span>` : ""}${S.approval.decision === "approve" ? '<span class="hint">Now enforced by the Gate (plain code).</span>' : ""}</div>`;
       else if (MODE === "live") h += `<div class="actions"><button class="btn go" id="bApprove" ${S.busy ? "disabled" : ""}>✓ Approve</button><button class="btn" id="bReject" ${S.busy ? "disabled" : ""}>✗ Reject, ask for another draft</button><input class="reason" id="reason" placeholder="Reason (the Policy agent reads it if you reject)"></div>`;
     }
-    const keep = $("reason") ? $("reason").value : "";
-    box.innerHTML = h; if ($("reason")) $("reason").value = keep;
+    const keep = $("reason") ? $("reason").value : ""; box.innerHTML = h; if ($("reason")) $("reason").value = keep;
   }
 
   // ---------------- attack: the brick wall
@@ -335,7 +442,7 @@ body.guiding .card{opacity:.55}body.guiding .card.spot{opacity:1;box-shadow:0 0 
     const box = $("wallcard"), w = S.walls[S.walls.length - 1];
     if (!w) { box.hidden = true; wallKey = null; return; } box.hidden = false;
     if (wallKey !== w) { wallKey = w; wallShown = 0;
-      box.innerHTML = `<h2><span>Red team vs policy v${w.version}${S.walls.length > 1 ? " · round " + S.walls.length : ""}</span><span class="h2n">grey: stopped · hollow green: answered with a safe figure · red: leak</span></h2>
+      box.innerHTML = `<h2><span>Red team vs policy v${w.version}${S.walls.length > 1 ? " · round " + S.walls.length : ""}</span><span class="h2n">grey: stopped · hollow green: answered with a safe figure · red: violation</span></h2>
         <div class="wall" id="wall"><div class="w"></div></div><div class="counts" id="wcounts" style="margin-top:8px"></div><div class="lanes">${S.attackers.map(a => `<div><b>${esc(a.id.toUpperCase())} · as the ${NAME[a.as]}</b><span class="hint">${esc(a.angle)}</span></div>`).join("")}</div><div id="wresult"></div>`; }
     const el = $("wall");
     for (; wallShown < w.dots.length; wallShown++) {
@@ -344,48 +451,122 @@ body.guiding .card{opacity:.55}body.guiding .card.spot{opacity:1;box-shadow:0 0 
     }
     [...el.querySelectorAll("span")].forEach((s, i) => { const d = w.dots[i]; if (!d) return; s.className = d.st === "leak" ? "lk" : d.st === "allow" ? "ok" : ""; if (d.st === "leak") s.style.left = "calc(64% + " + (30 + s.dataset.x * 200) + "px)"; });
     const nb = w.dots.filter(d => d.st === "block").length, nl = w.dots.filter(d => d.st === "leak").length;
-    $("wcounts").innerHTML = `<span><b>${w.dots.length}</b> attempts</span><span style="color:var(--no)"><b>${nb}</b> stopped</span><span style="color:var(--ok)"><b>${w.dots.length - nb - nl}</b> safe answers</span><span style="color:var(--leak)"><b>${nl}</b> leaks</span>`;
-    $("wresult").innerHTML = w.end ? (w.end.leaks ? `<div class="ev" style="margin-top:8px"><div class="rv">${w.end.leaks} attack${w.end.leaks > 1 ? "s" : ""} got through. The evidence is on the right. Fix the policy again.</div></div>` : `<div style="margin-top:8px;color:var(--ok);font-weight:600">✓ The policy held: ${w.end.attempts} attempts, no private data leaked.</div>`) : "";
+    $("wcounts").innerHTML = `<span><b>${w.dots.length}</b> attempts</span><span style="color:var(--no)"><b>${nb}</b> stopped</span><span style="color:var(--ok)"><b>${w.dots.length - nb - nl}</b> safe answers</span><span style="color:var(--leak)"><b>${nl}</b> part of a violation</span>`;
+    $("wresult").innerHTML = w.end ? (w.end.leaks ? `<div class="rv" style="margin-top:8px">${pl(w.end.leaks, "violation")} got through. Click it in the violations list, then fix the policy again.</div>` : `<div style="margin-top:8px;color:var(--ok);font-weight:600">✓ The policy held: ${w.end.attempts} attempts, every conversation reviewed by the AI Investigator, no violations.</div>`) : "";
   }
 
-  // ---------------- database panel
-  function renderER() {
-    const col = { cn: "#8a3ffc", eu: "#1f6feb", gl: "#0f7b72" };
-    $("er").innerHTML = `<svg viewBox="0 0 560 190" role="img" aria-label="Agents reach the clients table only through the Gate">
-      <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#9aa2b1"/></marker></defs>
-      ${ROWS.map((a, i) => `<rect x="4" y="${14 + i * 58}" width="128" height="44" rx="8" fill="#fff" stroke="${col[a]}" stroke-width="2"/><text x="68" y="${41 + i * 58}" text-anchor="middle" font-size="13" font-weight="600" fill="#151a24" font-family="IBM Plex Sans,sans-serif">${NAME[a]}</text>`).join("")}
-      <path d="M132 36 L200 88 M132 94 L200 94 M132 152 L200 100" stroke="#9aa2b1" stroke-width="1.6" fill="none"/>
-      <rect x="200" y="62" width="104" height="64" rx="8" fill="#151a24"/><text x="252" y="90" text-anchor="middle" font-size="13" font-weight="600" fill="#fff" font-family="IBM Plex Sans,sans-serif">Gate</text><text x="252" y="108" text-anchor="middle" font-size="11" fill="#c9cfd9" font-family="IBM Plex Sans,sans-serif">plain code</text>
-      <path d="M304 94 L344 94" stroke="#9aa2b1" stroke-width="1.6" marker-end="url(#ar)"/>
-      <rect x="348" y="20" width="208" height="150" rx="8" fill="#fff" stroke="#151a24" stroke-width="1.6"/><path d="M348 46 L348 28 Q348 20 356 20 L548 20 Q556 20 556 28 L556 46 Z" fill="#151a24"/><text x="452" y="38" text-anchor="middle" font-size="13" font-weight="600" fill="#fff" font-family="IBM Plex Sans,sans-serif">clients · 30 rows</text>
-      ${["id", "name", "region  CN | EU", "city", "segment  retail | private", "balance_eur", "risk_rating  low | med | high"].map((f, i) => `<text x="360" y="${62 + i * 16}" font-size="12" font-family="IBM Plex Mono,monospace" fill="#151a24">${f}</text>`).join("")}
-    </svg><div class="hint">Four ways in: <b>read records</b>, <b>change a record</b>, <b>counts &amp; totals</b>, <b>ask another agent</b>. The Gate checks every one.</div>`;
+  // ---------------- the setup card: diagram + protection goal
+  function renderSetup() {
+    const col = { cn: "#8a3ffc", eu: "#1f6feb", gl: "#0f7b72" }, T = (x, y, s, o) => `<text x="${x}" y="${y}" ${o || ""} font-family="IBM Plex Sans,sans-serif">${s}</text>`;
+    $("er").innerHTML = `<svg viewBox="0 0 560 250" role="img" aria-label="Agents ask the clients table through the Gate; the AI Investigator reviews every conversation and code confirms its findings">
+      <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#9aa2b1"/></marker><marker id="ai" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#7a3db8"/></marker></defs>
+      ${ROWS.map((a, i) => `<g data-agent="${a}" class="svgag" tabindex="0" role="button" aria-label="${NAME[a]}: open agent details"><rect x="4" y="${8 + i * 50}" width="124" height="38" rx="8" fill="#fff" stroke="${col[a]}" stroke-width="2"/>` + T(66, 32 + i * 50, NAME[a], 'text-anchor="middle" font-size="13" font-weight="600" fill="#151a24"') + "</g>").join("")}
+      <path d="M128 27 L196 72 M128 77 L196 77 M128 127 L196 82" stroke="#9aa2b1" stroke-width="1.6" fill="none"/>
+      <rect x="196" y="48" width="108" height="58" rx="8" fill="#151a24"/>${T(250, 73, "Gate", 'text-anchor="middle" font-size="13" font-weight="600" fill="#fff"')}${T(250, 91, "checks the policy", 'text-anchor="middle" font-size="10.5" fill="#c9cfd9"')}
+      <path d="M304 77 L344 77" stroke="#9aa2b1" stroke-width="1.6" marker-end="url(#ar)"/>
+      <rect x="348" y="6" width="208" height="140" rx="8" fill="#fff" stroke="#151a24" stroke-width="1.6"/><path d="M348 30 L348 14 Q348 6 356 6 L548 6 Q556 6 556 14 L556 30 Z" fill="#151a24"/>${T(452, 23, "clients · 30 rows", 'text-anchor="middle" font-size="12.5" font-weight="600" fill="#fff"')}
+      ${["id, name", "region  CN | EU", "city", "segment  retail | private", "balance_eur", "risk_rating  low | med | high"].map((f, i) => `<text x="360" y="${48 + i * 16}" font-size="11.5" font-family="IBM Plex Mono,monospace" fill="#151a24">${f}</text>`).join("")}
+      <g data-agent="investigator" class="svgag" tabindex="0" role="button" aria-label="AI Investigator: open agent details"><rect x="4" y="176" width="300" height="66" rx="10" fill="#f4ecfb" stroke="#7a3db8" stroke-width="1.8"/>${T(154, 200, "AI Investigator", 'text-anchor="middle" font-size="13.5" font-weight="700" fill="#7a3db8"')}${T(154, 220, "reviews every conversation against the goal", 'text-anchor="middle" font-size="11" fill="#5d3a86"')}</g>
+      <path d="M154 108 L154 172" stroke="#7a3db8" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#ai)"/>${T(160, 150, "every question, answer, message", 'font-size="10.5" fill="#7a3db8"')}
+      <path d="M304 209 L344 209" stroke="#7a3db8" stroke-width="1.6" marker-end="url(#ai)"/>
+      <rect x="348" y="176" width="208" height="66" rx="10" fill="#151a24"/>${T(452, 200, "Code confirms", 'text-anchor="middle" font-size="13.5" font-weight="700" fill="#fff"')}${T(452, 220, "each finding against the real data", 'text-anchor="middle" font-size="11" fill="#c9cfd9"')}
+    </svg><div class="hint">Four ways in: <b>read records</b>, <b>change a record</b>, <b>counts &amp; totals</b>, <b>ask another agent</b>. The Gate checks each one against the policy.</div>`;
+    $("goal").innerHTML = `<b class="t">The protection goal · must never happen, whatever the policy says</b><ul>${GOAL.map(g => `<li>${esc(g)}</li>`).join("")}</ul>`;
+  }
+
+  // ---------------- the agents: a roster in the setup card, and a full card per agent
+  const ACOL = { cn: "#8a3ffc", eu: "#1f6feb", gl: "#0f7b72", investigator: "#7a3db8", policy: "#b4690e", explorer: "#5b6475", redteam: "#c0392b" };
+  const KIND = { worker: "Worker agent", investigator: "Reviewer agent", policy: "Policy agent", explorer: "Explorer agent", redteam: "Red-team agent" };
+  const INIT = { cn: "CN", eu: "EU", gl: "GA", investigator: "AI", policy: "PA" };
+  function fallbackCard(id) {
+    if (NAME[id]) return { id, kind: "worker", name: NAME[id], goal: BASE[id] };
+    if (id === "investigator") return { id, kind: "investigator", name: "AI Investigator", goal: "Reviews every conversation against the protection goal; code confirms each finding." };
+    if (id === "policy") return { id, kind: "policy", name: "Policy agent", goal: "Rewrites the policy; code tests every draft; a person approves." };
+    const ex = (S.explorers || []).find(x => x.id === id), at = (S.attackers || []).find(x => x.id === id);
+    if (ex) return { id, kind: "explorer", name: "Explorer " + id.slice(2), acts_as: ex.as, goal: ex.angle };
+    if (at) return { id, kind: "redteam", name: "Red team " + id.slice(2), acts_as: at.as, goal: at.angle };
+    return { id, kind: "worker", name: id, goal: "" };
+  }
+  const card = id => (S.cards || {})[id] || fallbackCard(id);
+  const acol = c => ACOL[c.id] || ACOL[c.kind];
+  const ainit = c => INIT[c.id] || (c.kind === "explorer" ? "X" : "R") + c.id.slice(2);
+  const actsOf = (id, d) => { const c = card(id); return c.kind === "explorer" || c.kind === "redteam" ? d.ev.attacker === id : d.ev.actor === id && !d.ev.attacker; };
+  const allDotsNow = () => S.dots.concat(...S.walls.map(w => w.dots));
+  function agentStat(id) {
+    const c = card(id);
+    if (c.kind === "investigator") return S.invCount ? pl(S.invCount, "conversation") + " reviewed · " + S.leaks.filter(L => L.found_by !== "code").length + " confirmed" : "";
+    if (c.kind === "policy") return S.drafts.length ? pl(S.drafts.length, "draft") : "";
+    const ds = allDotsNow().filter(d => actsOf(id, d)), lk = S.leaks.filter(L => c.kind === "worker" ? L.learner === id && !L.attacker : L.attacker === id);
+    return ds.length ? pl(ds.length, "question") + (lk.length ? ` · <span class="st">${pl(lk.length, "violation")}</span>` : "") : "";
+  }
+  function renderRoster() {
+    const one = id => { const c = card(id), st = agentStat(id);
+      return `<button class="acard" data-agent="${id}" style="--ac:${acol(c)}"><span class="av">${ainit(c)}</span><span><b>${esc(c.name)}</b><span>${esc(c.kind === "explorer" || c.kind === "redteam" ? "as the " + NAME[c.acts_as] : c.model || KIND[c.kind])}${st ? " · " + st : ""}</span></span></button>`; };
+    const ex = (S.explorers || []).map(x => x.id), rt = (S.attackers || []).map(x => x.id);
+    $("roster").innerHTML = `<b class="t">The agents · click one for its goal, system prompt, tools and access</b><div class="rgroups">
+      <div class="rg"><i>Do the bank's work</i><div class="rcards">${ROWS.map(one).join("")}</div></div>
+      <div class="rg"><i>Check and fix</i><div class="rcards">${one("investigator")}${one("policy")}</div></div>
+      <div class="rg"><i>Probe on purpose</i><div class="rmini">${ex.map(one).join("")}${rt.map(one).join("")}</div></div></div>`;
+  }
+  function agentHTML(id) {
+    const c = card(id), r = c.kind === "worker" ? id : c.acts_as, p = S.policy, sec = (t, h, st) => `<div class="sec"${st ? ` style="${st}"` : ""}><i>${t}</i>${h}</div>`;
+    let h = `<div class="ahd" style="--ac:${acol(c)}"><span class="av">${ainit(c)}</span><div><h3>${esc(c.name)}</h3><div class="chips2"><span class="chip2">${KIND[c.kind]}</span>${c.model ? `<span class="chip2">model ${esc(c.model)}</span>` : ""}${c.temperature != null ? `<span class="chip2">temperature ${c.temperature}</span>` : ""}${c.budget ? `<span class="chip2">up to ${c.budget} tool calls</span>` : ""}${c.base ? `<span class="chip2">${esc(c.base)}</span>` : ""}${c.acts_as ? `<span class="chip2">acts as the ${NAME[c.acts_as]}</span>` : ""}</div></div></div>`;
+    h += sec("Goal", esc(c.goal || ""));
+    // access and protection goal
+    let acc;
+    if (r) acc = `<div class="acc">${COLS.map(([k, l]) => { const ct = cellText(p, r, k), lk = lockLabel(r, k); return `<div><span>${esc(l)}${lk ? ` <span class="lk">${lk}</span>` : ""}${ct.q ? `<br><span class="hint">${esc(ct.q)}</span>` : ""}</span><span class="${ct.st === "yes" ? "yes" : "no"}">${esc(ct.v)}</span></div>`; }).join("")}</div><div class="hint" style="margin-top:4px">Policy v${p.version}. The Gate (plain code) checks every call against this; the agent cannot get around it.</div>`;
+    else if (c.kind === "investigator") acc = `<div class="acc"><div><span>Client data tools</span><span class="no">✗ none</span></div><div><span>Change anything</span><span class="no">✗ never</span></div><div><span>Reads</span><span class="yes">every conversation, after it ends</span></div><div><span>Its findings count only if</span><span class="yes">code confirms them</span></div></div>`;
+    else acc = `<div class="acc"><div><span>Client data tools</span><span class="no">✗ none</span></div><div><span>Widen anyone's record rights</span><span class="no">✗ code rejects it</span></div><div><span>Can</span><span class="yes">propose a policy</span></div><div><span>Takes effect only when</span><span class="yes">a person approves</span></div></div>`;
+    const goal = r ? GOAL[ROWS.indexOf(r)] : c.kind === "investigator" ? "Checks every conversation against all three lines of the protection goal." : "Its policy must stop every confirmed violation and keep every everyday question working.";
+    h += `<div class="agrid">${sec("Access" + (r ? " right now" : ""), acc)}${sec(r ? "Protection goal · whatever the policy says" : "Measured against", esc(goal), "background:var(--leakbg)")}</div>`;
+    if (c.input) h += sec("What it receives", esc(c.input));
+    if (c.loop) h += sec("How it works", esc(c.loop));
+    if (c.tools && c.tools.length) h += sec("Tools · " + c.tools.length, `<div style="display:grid;gap:6px;margin-top:4px">${c.tools.map(t => `<div class="tool"><code>${esc(t.name)}</code><div class="d">${esc(t.description)}</div><div class="ps">${t.params.map(q => `<span class="${q.required ? "req" : ""}" title="${esc(q.description || "")}">${esc(q.name)}: ${esc(String(q.type || ""))}</span>`).join("")}</div></div>`).join("")}</div>`);
+    h += sec("System prompt · the exact text the model gets", c.system ? `<pre class="prompt">${esc(c.system)}</pre>` : `<div class="hint">Not in this recording. Record again with the current version to include it.</div>`);
+    // today
+    let today = "";
+    if (c.kind === "investigator") {
+      const conf = S.leaks.filter(L => L.found_by !== "code"), miss = S.leaks.filter(L => L.found_by === "code");
+      today = S.invCount ? `${pl(S.invCount, "conversation")} reviewed · <b>${conf.length}</b> findings confirmed by code · <b>${S.rejected.length}</b> rejected by code · ${miss.length} missed (caught by the backstop)` +
+        (S.rejected.length ? `<div style="margin-top:6px;display:grid;gap:4px">${S.rejected.slice(0, 4).map(x => `<div class="qa">Claimed: ${esc((x.finding || {}).explanation || "")}<br>✗ ${esc(((x.checks || []).find(k => !k.ok) || {}).label || "not confirmed")}</div>`).join("")}</div>` : "") : "";
+    } else if (c.kind === "policy") {
+      today = S.drafts.length ? `<div class="chips2">${S.drafts.map(d => `<span class="chip2">draft ${d.n}: ${d.score ? "stops " + d.score.leaks_blocked + "/" + d.score.leaks_total + ", breaks " + d.score.legit_blocked : "invalid"}</span>`).join("")}</div>` : "";
+    } else {
+      const ds = allDotsNow().filter(d => actsOf(id, d)), lk = S.leaks.filter(L => c.kind === "worker" ? L.learner === id && !L.attacker : L.attacker === id);
+      if (ds.length) today = `${pl(ds.length, "question")} · ${ds.filter(d => d.ev.decision === "allow").length} allowed · ${ds.filter(d => d.ev.decision !== "allow").length} blocked` + (lk.length ? ` · <b style="color:var(--leak)">${pl(lk.length, "violation")}</b>` : "") +
+        `<div style="margin-top:6px;display:grid;gap:4px">${ds.slice(-5).map(d => qaLine(d.ev)).join("")}</div>` + (ds.length > 5 ? `<div class="hint">Last 5 shown.</div>` : "");
+    }
+    h += sec("This session", today || `<span class="hint">Nothing yet.</span>`);
+    return h;
   }
   function dataModal() {
-    $("modalbody").innerHTML = `<h3 style="margin:0 0 8px">clients · synthetic data</h3><table class="dtab"><tr><th>id</th><th>name</th><th>region</th><th>city</th><th>segment</th><th style="text-align:right">balance</th></tr>` +
-      E.CLIENTS.map(c => `<tr><td>${c.id}</td><td>${esc(c.name)}</td><td>${c.region}</td><td>${c.city}</td><td>${c.segment === "private" ? "<b>private</b>" : "retail"}</td><td class="r">${eur(c.balance)}</td></tr>`).join("") + "</table>";
-    $("modal").classList.add("show");
+    openModal(`<h3>clients · synthetic data</h3><table class="dtab"><tr><th>id</th><th>name</th><th>region</th><th>city</th><th>segment</th><th style="text-align:right">balance</th></tr>` +
+      E.CLIENTS.map(c => `<tr><td>${c.id}</td><td>${esc(c.name)}</td><td>${c.region}</td><td>${c.city}</td><td>${c.segment === "private" ? "<b>private</b>" : "retail"}</td><td class="r">${eur(c.balance)}</td></tr>`).join("") + "</table><div class=\"hint\">Everyone starts on risk rating low (retail) or medium (private).</div>");
   }
 
-  // ---------------- live mode: server.js runs the agents
-  async function api(path, body) { const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) }); const j = await r.json().catch(() => ({})); if (!r.ok) { S.status = j.error || ("HTTP " + r.status); render(); } return j; }
-  let raf = null; const soon = () => { if (!raf) raf = requestAnimationFrame(() => { raf = null; render(); }); };
   // ---------------- one paced queue for live and replayed events (lets the guide pause at key moments)
+  let raf = null; const soon = () => { if (!raf) raf = requestAnimationFrame(() => { raf = null; render(); }); };
   const QUEUE = []; let pumping = false, paused = false, playing = false, ptimer = null;
   function enqueue(evs) { QUEUE.push(...evs); if (!pumping) { pumping = true; pump(); } }
   function pump() {
     if (paused || !QUEUE.length) { pumping = false; if (!QUEUE.length) playing = false; soon(); return; }
     const ev = QUEUE.shift(); on(ev); if (G.on) guideHook(ev); soon();
     const slow = MODE !== "live" || G.on, backlog = QUEUE.length;
-    let d = ev.kind === "query" ? (slow ? (ev.phase === "ch1" ? 90 : 150) : (backlog > 40 ? 0 : 25)) : slow ? (ev.kind === "leak" ? 500 : ev.kind === "draft" ? 1500 : ev.kind === "approval" ? 1000 : ["chapter", "explore", "fix_start", "wall", "day_start"].includes(ev.kind) ? 800 : 0) : 0;
+    let d = ev.kind === "query" ? (slow ? (ev.phase === "ch1" ? 80 : 140) : (backlog > 40 ? 0 : 25)) : slow ? (ev.kind === "leak" ? 450 : ev.kind === "draft" ? 1500 : ev.kind === "approval" ? 1000 : ["chapter", "explore", "fix_start", "wall", "day_start"].includes(ev.kind) ? 800 : 0) : 0;
     if (G.on && backlog < 2 && MODE === "live") d = Math.min(d, 60);
     ptimer = setTimeout(pump, d);
   }
+  async function api(path, body) { const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) }); const j = await r.json().catch(() => ({})); if (!r.ok) { S.status = r.status === 409 ? "Still working on the last step (" + String(j.error || "").replace(/^Busy:? */, "") + "). Wait for it to finish, then press the button again." : j.error || ("HTTP " + r.status); render(); } return j; }
   function startLive(st) {
     MODE = "live"; $("mode").className = "mode live"; $("mode").textContent = "LIVE · " + st.model;
     S.policy = withRules(st.policy); S.busy = st.busy; if (st.calls) $("cost").textContent = st.calls + " model calls · ₹" + st.cost_inr;
-    $("foot").innerHTML = "Live. Every agent is an AI model (" + esc(st.model) + ") that chooses its own questions. Every allow/block and every violation is decided by plain code, not by a model. A person approves every policy change. Synthetic data, fictional clients.";
-    const es = new EventSource("/api/events"); es.onmessage = m => enqueue([JSON.parse(m.data)]);
+    $("foot").innerHTML = "Live. Every agent, including the Investigator and the Policy agent, is an AI model (" + esc(st.model) + "). Every allow/block is decided by plain code; every violation is found by the AI Investigator and confirmed by code against the real data. A person approves every policy change. Synthetic data, fictional clients.";
+    const es = new EventSource("/api/events");
+    // on every (re)connect the server resends its whole history: start from a clean page, then ask whether a job is really running
+    es.onopen = () => { QUEUE.length = 0; S = fresh(withRules(E.policyV1())); draftPolicy = null;
+      fetch("/api/state", { cache: "no-store" }).then(r => r.json()).then(st => { S.busy = st.busy; if (st.error && !st.busy) S.status = "Last job failed: " + st.error; render(); }).catch(() => {}); };
+    es.onerror = () => { S.busy = null; S.status = "Lost the connection to the server. Is node server.js still running? The page reconnects by itself."; render(); };
+    es.onmessage = m => enqueue([JSON.parse(m.data)]);
     render();
   }
   // ---------------- replay mode: the recording, one button at a time
@@ -400,122 +581,100 @@ body.guiding .card{opacity:.55}body.guiding .card.spot{opacity:1;box-shadow:0 0 
     if (seg.some(e => e.kind === "done")) return "done";
     return null;
   }
-  function play(kind) {
-    if (playing || nextSegment() !== kind) return false;
-    const end = segEnd(cursor); playing = true; const seg = RUN.events.slice(cursor, end + 1); cursor = end + 1; enqueue(seg); return true;
-  }
+  function play(kind) { if (playing || nextSegment() !== kind) return false; const end = segEnd(cursor); playing = true; const seg = RUN.events.slice(cursor, end + 1); cursor = end + 1; enqueue(seg); return true; }
   function startReplay(run) {
     RUN = run; MODE = "replay"; cursor = 0; playing = false; paused = false; QUEUE.length = 0; clearTimeout(ptimer); pumping = false;
     S = fresh(withRules(E.policyV1())); dotCount = 0; wallKey = null;
     $("mode").className = "mode " + (run.sample ? "sample" : "rep"); $("mode").textContent = run.sample ? "SAMPLE · scripted, not a recording" : "REPLAY · recorded " + new Date(run.recorded_at).toLocaleDateString("en-GB");
     if (!run.sample) $("cost").textContent = run.calls + " model calls · ₹" + run.cost_inr;
-    $("foot").innerHTML = (run.sample ? "<b>Scripted sample</b> (no AI involved), to preview the tool. " : "Replay of a real recorded run: the buttons play it back step by step. ") + "For the live tool, run <code>node server.js</code> and open <b>http://localhost:8770</b>: edit the policy and run real agents against it. Every allow/block and every violation is decided by plain code. Synthetic data, fictional clients.";
+    $("foot").innerHTML = (run.sample ? "<b>Scripted sample</b> (no AI involved), to preview the tool. " : "Replay of a real recorded run: the buttons play it back step by step. ") + "For the live tool, run <code>node server.js</code> and open <b>http://localhost:8770</b>. Synthetic data, fictional clients.";
     while (cursor < run.events.length && run.events[cursor].kind === "setup") on(run.events[cursor++]);
     render();
   }
 
   // ---------------- Guided run: the tool tells the story of THIS run, from its real events
-  const G = { on: false, seen: new Set(), day: 0, waitApproval: false, next: null };
-  const SPOTS = ["polcard", "actcard", "evcard", "propcard", "wallcard", "dbcard"];
+  const G = { on: false, seen: new Set(), day: 0, next: null };
+  const SPOTS = ["dbcard", "polcard", "actcard", "propcard", "wallcard"];
   function narrate(text, opts) {
     opts = opts || {};
     $("gtext").innerHTML = text; $("guide").hidden = false; $("guide").className = "guide" + (opts.tone ? " " + opts.tone : "");
     SPOTS.forEach(id => $(id) && $(id).classList.toggle("spot", (opts.spot || []).includes(id)));
-    const first = opts.scrollTo || (opts.spot || [])[0]; if (first && $(first) && !$(first).hidden) $(first).scrollIntoView({ behavior: "smooth", block: opts.scrollTo ? "center" : "nearest" });
-    G.next = opts.next || null;
-    $("gnext").hidden = !opts.pause; $("gnext").textContent = opts.label || "Continue ›";
+    const first = opts.scrollTo || (opts.spot || [])[0]; if (first && $(first) && !$(first).hidden && !opts.modal) $(first).scrollIntoView({ behavior: "smooth", block: opts.scrollTo ? "center" : "nearest" });
+    if (opts.modal) openModal(opts.modal);
+    G.next = opts.next || null; $("gnext").hidden = !opts.pause; $("gnext").textContent = opts.label || "Continue ›";
     if (opts.pause) paused = true;
   }
-  function cont() { // the presenter pressed Continue
-    $("gnext").hidden = true; const f = G.next; G.next = null; paused = false;
-    if (f) f(); if (!pumping && QUEUE.length) { pumping = true; pump(); }
-  }
-  function act(kind) { // drive the tool exactly as the buttons do
+  function cont() { $("gnext").hidden = true; closeModal(); const f = G.next; G.next = null; paused = false; if (f) f(); if (!pumping && QUEUE.length) { pumping = true; pump(); } }
+  function act(kind) {
     if (MODE === "live") { const path = { find: "/api/find", fix: "/api/fix", attack: "/api/attack" }[kind];
       const tryIt = n => fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then(r => { if (r.status === 409 && n > 0) setTimeout(() => tryIt(n - 1), 1000); }); tryIt(15); }
     else if (!play(kind)) guideEnd();
   }
   function startGuide() {
-    G.on = true; G.seen = new Set(); G.day = 0; G.waitApproval = false; draftPolicy = null;
-    const begin = () => {
-      narrate("<b>A bank gives three AI agents sensible rules.</b> China client data stays with the China agent, EU data with the EU agent. The Global Analyst only works from totals, which count as anonymous. Look at the matrix: it looks airtight.", { spot: ["polcard"], pause: true,
-        next: () => narrate("They all work on <b>one table of 30 wealth clients</b>. Every question goes through the Gate, which is plain code applying the rules.", { spot: ["dbcard"], pause: true, label: "▶ Start the day", next: () => act("find") }) });
-    };
+    G.on = true; G.seen = new Set(); G.day = 0; draftPolicy = null; document.body.classList.add("guiding"); $("gexit").textContent = "Exit guide";
+    const begin = () => narrate("<b>A bank gives three AI agents sensible rules.</b> China client data stays with the China agent, EU data with the EU agent; totals count as anonymous. On paper, the matrix looks airtight.", { spot: ["polcard"], pause: true,
+      next: () => narrate("<b>What must never happen</b> is written down separately, as the protection goal. After every conversation an <b>AI Investigator</b> checks against it, and <b>code confirms</b> each finding against the real data.", { spot: ["dbcard"], pause: true, label: "▶ Start the day", next: () => act("find") }) });
     if (MODE === "live") api("/api/reset").then(() => setTimeout(begin, 300)); else { startReplay(RUN); G.on = true; begin(); }
   }
   function guideEnd(text) {
-    narrate(text || "<b>End of the guided run.</b> Everything stays on screen: click any red cell or square to dig in, or edit the policy and run it again.", { spot: [], pause: false });
-    G.on = false; SPOTS.forEach(id => $(id) && $(id).classList.remove("spot")); $("gexit").textContent = "Close";
+    narrate(text || "<b>End of the guided run.</b> Everything stays on screen: click any red cell or violation to dig in, or change the policy and run it again.", { spot: [] });
+    G.on = false; document.body.classList.remove("guiding"); $("gexit").textContent = "Close";
   }
-  const pl = (n, w) => n + " " + w + (n === 1 ? "" : "s");
   function storyLine(L) {
     const who = NAME[L.learner], name = esc(L.victimNames.join(" and ")), task = (S.tasks.find(t => t.id === L.task) || {}).text;
-    const q = (L.queryIdx || []).map(i => S.byQ[i] && S.byQ[i].ev).filter(Boolean);
-    const lead = L.attacker ? `An explorer agent with the ${who}'s permissions went looking. ` : task ? `A banker asked the ${who}: <i>“${esc(task.length > 110 ? task.slice(0, 108) + "…" : task)}”</i> ` : "";
-    if (L.type === "single_out") return lead + `It asked: <b>${esc(question((q[0] || {}).args || {}))}</b> Allowed: totals are anonymous. But that figure covered ${L.victimNames.length === 1 ? "one person" : "only " + L.victimNames.length + " people"}: <b>${name}</b>. The ${who} now knows ${eur(L.revealed)}${L.victimNames.length === 1 ? ", " + name + "'s exact balance" : ""}.`;
-    if (L.type === "difference") return lead + `It asked two allowed totals. They differ by one person: <b>${name}</b>. Subtract them and the ${who} has ${name}'s balance, <b>${eur(L.revealed)}</b>.`;
-    if (L.type === "relay") return lead + `It may never read those records, so it <b>asked the EU agent</b>, which simply answered. <b>${name}</b>'s details reached the ${who}.`;
-    if (L.type === "edit") return lead + `It may never change EU records, so it <b>asked the ${NAME[L.via] || "EU agent"}</b>, which did it: <b>${name}</b>'s risk rating went ${esc(L.change.from)} → ${esc(L.change.to)}. A record changed by an agent that must never touch it.`;
-    return lead + esc(L.story.headline) + ".";
+    const lead = L.attacker ? `An explorer agent with the ${who}'s permissions went looking. ` : task ? `A banker asked the ${who}: <i>“${esc(task.length > 100 ? task.slice(0, 98) + "…" : task)}”</i> ` : "";
+    const how = L.found_by === "code" ? " <i>(Caught by a code check; the Investigator missed it.)</i>" : " The Investigator flagged it; code confirmed it.";
+    if (L.type === "single_out") return lead + (mlabel(L) === "Narrowing with filters" ? "It <b>narrowed the filters</b> (balance ranges, excluded cities) until " : "") + `${mlabel(L) === "Narrowing with filters" ? "an" : "An"} allowed figure covered ${L.victimNames.length === 1 ? "one person" : "only " + L.victimNames.length + " people"}: <b>${name}</b>. The ${who} now knows ${eur(L.revealed)}.` + how;
+    if (L.type === "difference") return lead + `Two allowed totals differ by one person, <b>${name}</b>: subtract them and the ${who} has ${eur(L.revealed)}.` + how;
+    if (L.type === "relay") return lead + `It may never read those records, so it <b>asked another agent</b>, which simply answered: <b>${name}</b>'s details.` + how;
+    if (L.type === "edit") return lead + `It may never change EU records, so it <b>asked the ${NAME[L.via] || "EU agent"}</b>, which did it: <b>${name}</b>'s risk rating went ${esc((L.change || {}).from)} → ${esc((L.change || {}).to)}.` + how;
+    return lead + esc(L.story.headline) + "." + how;
   }
   function guideHook(ev) {
     switch (ev.kind) {
       case "chapter": if (ev.n === 1) { G.day++; narrate(G.day === 1 ? `<b>A normal day.</b> The agents handle ${S.tasks.length} everyday requests from bankers and the board. Each square is one question an agent asked the system.` : "<b>Same day, new rules.</b> The agents redo exactly the same requests under the approved policy.", { spot: ["actcard", "polcard"] }); } break;
+      case "investigate": if (G.day === 1 && S.invCount === 1) narrate("After each conversation, the <b>AI Investigator</b> reviews it against the protection goal.", { spot: ["actcard"] }); break;
       case "leak": {
-        if (G.day > 1 || ev.phase === "ch2") return; const key = ev.type; // one pause per kind of violation: too-small total, subtracting totals, asking another agent, changing a record
-        if (G.seen.has(key)) return; G.seen.add(key);
-        S.sel = S.leaks[S.leaks.length - 1];
-        narrate(`<span class="gtag">Violation</span> ${storyLine(S.sel)}`, { spot: ["evcard", "polcard"], pause: true, tone: "red" }); break; }
-      case "explore": if (G.day === 1) narrate("Then an <b>explorer agent</b> with the China agent's exact permissions goes looking, on purpose, for anything about an EU client.", { spot: ["actcard"] }); break;
+        if (G.day > 1 || ev.phase === "ch2") return; const L = S.leaks[S.leaks.length - 1], key = mlabel(L); if (G.seen.has(key)) return; G.seen.add(key);
+        narrate(`<span class="gtag">Violation · ${esc(mlabel(L))}</span> ${storyLine(L)}`, { spot: ["polcard"], pause: true, tone: "red", modal: evidenceHTML(L) }); break; }
+      case "explore": if (G.day === 1) narrate(`Then <b>${(ev.explorers || [1]).length} explorer agents</b> with the China agent's exact permissions go looking on purpose, each from a different angle.`, { spot: ["actcard"] }); break;
       case "chapter_end": {
-        const ppl = new Set(S.leaks.flatMap(L => L.victims)).size;
-        const glN = new Set(S.leaks.filter(L => L.learner === "gl").flatMap(L => L.victims)).size;
-        if (G.day === 1) narrate(ev.leaks ? `<b>End of the day:</b> ${ev.queries} questions, <b>${pl(ev.leaks, "violation")}</b>, ${pl(ppl, "client")} affected${glN ? `, ${glN} of them by the Global Analyst simply building the board pack it was asked for` : ""}. Every one was allowed by the rules as written. The rules looked right and still failed.` : `<b>End of the day:</b> ${ev.queries} questions and no violations under these rules.`, { spot: ["polcard"], pause: true, tone: ev.leaks ? "red" : "", label: ev.leaks ? "Let the agents fix it ›" : "Continue ›", next: ev.leaks ? () => act("fix") : () => guideEnd() });
-        else { const w = S.dayDone; narrate(`<b>Same day, new rules: ${pl(S.leaks.length, "violation")}.</b> ${S.leaks.length ? "" : "The same everyday requests still got their answers."} Agents found holes people missed, wrote rules that close them, and the rules held under attack.`, { spot: ["polcard", "actcard"], pause: true, tone: S.leaks.length ? "red" : "green", label: "Finish", next: () => guideEnd() }); }
+        const ppl = new Set(S.leaks.flatMap(L => L.victims)).size, methods = new Set(S.leaks.map(mlabel)).size;
+        if (G.day === 1) narrate(ev.leaks ? `<b>End of the day:</b> ${ev.queries} questions, <b>${pl(S.leaks.filter(L => L.ver === S.policy.version).length, "violation")}</b> found by ${pl(methods, "different method")}, ${pl(ppl, "client")} affected. Every one was allowed by the rules as written.` : `<b>End of the day:</b> ${ev.queries} questions, no violations under these rules.`, { spot: ["polcard"], pause: true, tone: ev.leaks ? "red" : "", label: ev.leaks ? "Let the agents fix it ›" : "Continue ›", next: ev.leaks ? () => act("fix") : () => guideEnd() });
+        else narrate(`<b>Same day, new rules: ${pl(S.leaks.length, "violation")}.</b> ${S.leaks.length ? "" : "The same everyday requests still got their answers."} Agents found holes people missed, wrote narrow rules that close them, and the rules held under attack.`, { spot: ["polcard", "actcard"], pause: true, tone: S.leaks.length ? "red" : "green", label: "Finish", next: () => guideEnd() });
         break; }
       case "fix_start": narrate("<b>A Policy agent reads every violation and drafts new rules.</b> Code re-runs every question from the day against each draft: does it stop every violation, and does everyday work still go through?", { spot: ["propcard"] }); break;
-      case "draft": if (ev.score && ev.score.legit_blocked) narrate(`Draft ${ev.n} stops ${ev.score.leaks_blocked} of ${ev.score.leaks_total} violations but <b>breaks ${pl(ev.score.legit_blocked, "everyday question")}</b>${ev.score.legit_blocked_list[0] ? ", e.g. " + esc(ev.score.legit_blocked_list[0].replace(/^[^:]+: /, "")) : ""}. Too blunt. The agent tries again.`, { spot: ["propcard"] }); break;
-      case "proposal": if (MODE === "live") { G.waitApproval = true; narrate(proposalLine(ev) + " <b>You decide:</b> approve or reject it below.", { spot: ["propcard"], scrollTo: "bApprove" }); } break;
+      case "draft": if (ev.score && ev.score.legit_blocked) narrate(`Draft ${ev.n} stops ${ev.score.leaks_blocked} of ${ev.score.leaks_total} violations but <b>breaks ${pl(ev.score.legit_blocked, "everyday question")}</b>. Too blunt: the agent tries again.`, { spot: ["propcard"] }); break;
+      case "proposal": if (MODE === "live") narrate(proposalLine(ev) + " <b>You decide:</b> approve or reject it below.", { spot: ["propcard"], scrollTo: "propcard" }); break;
       case "approval":
-        if (MODE !== "live") narrate(proposalLine(S.proposal || {}) + ` <b>${ev.decision === "approve" ? "Approved" : "Rejected"} by ${esc(ev.by)}.</b>`, { spot: ["propcard"], pause: true, next: ev.decision === "approve" ? () => narrate("Now plain code enforces the new rules.", { spot: ["polcard"] }) : null });
+        if (MODE !== "live") narrate(proposalLine(S.proposal || {}) + ` <b>${ev.decision === "approve" ? "Approved" : "Rejected"} by ${esc(ev.by)}.</b>`, { spot: ["propcard"], scrollTo: "propcard", pause: true });
         else if (ev.decision !== "approve") narrate("Rejected. The Policy agent reads your reason and drafts again.", { spot: ["propcard"] });
         break;
       case "policy": narrate(`<b>Policy v${ev.version} is in force.</b> The changed cells are outlined. Now let's attack it.`, { spot: ["polcard"], pause: true, label: "▶ Attack it", next: () => act("attack") }); break;
-      case "wall": narrate("<b>Three red-team agents try every angle:</b> tiny groups, subtracting totals, getting another agent to do it.", { spot: ["wallcard"] }); break;
-      case "wall_end": narrate(ev.leaks ? `<b>${ev.attempts} attempts, ${pl(ev.leaks, "violation")} got through.</b> The agents will have to fix it again.` : `<b>${ev.attempts} attempts. Every one hit the wall.</b>`, { spot: ["wallcard"], pause: true, tone: ev.leaks ? "red" : "green",
+      case "wall": narrate("<b>Three red-team agents try every angle:</b> tiny groups, subtracting totals, getting another agent to do it. The Investigator reviews every attack.", { spot: ["wallcard"] }); break;
+      case "wall_end": narrate(ev.leaks ? `<b>${ev.attempts} attempts; ${pl(ev.leaks, "violation")} got through.</b> The agents will have to fix it again.` : `<b>${ev.attempts} attempts. Every one hit the wall.</b>`, { spot: ["wallcard"], pause: true, tone: ev.leaks ? "red" : "green",
         label: MODE === "live" ? "▶ Run the same day again" : "Continue ›", next: () => { if (MODE === "live") act("find"); else { const nx = nextSegment(); if (nx && nx !== "done") act(nx); else finalReplay(); } } }); break;
     }
   }
   function proposalLine(P) {
-    const s = P.score || {}; const ok = s.legit_total - s.legit_blocked;
-    return `<b>The proposal:</b> ${esc((withRules(P.policy || S.policy).rules || []).filter(r => !(withRules(P.from || S.prevPolicy || E.policyV1()).rules || []).includes(r)).join(" ") || "new rules")} Re-tested on the whole day: <b>${s.leaks_blocked}/${s.leaks_total} violations stopped</b>, <b>${ok}/${s.legit_total} everyday questions</b> still work.`;
+    const s = P.score || {}, ch = P.changes || (P.policy ? E.policyChanges(withRules(P.from || S.prevPolicy || E.policyV1()), withRules(P.policy)) : []);
+    return `<b>The agent's fix, in ${pl(ch.length, "change")}:</b> ${ch.map(c => esc(c.text) + (c.closes != null ? ` <i>(closes ${c.closes})</i>` : "")).join("; ")}. Re-tested on the whole day: <b>${s.leaks_blocked}/${s.leaks_total} violations stopped</b>, <b>${s.legit_total - s.legit_blocked}/${s.legit_total} everyday questions</b> still work.`;
   }
   function finalReplay() {
-    const done = RUN.events.find(e => e.kind === "done"), s = done && done.summary;
-    const broke = s && s.routine_still_working < s.routine_total;
-    guideEnd(s ? `<b>The result:</b> the rules looked right and still failed ${pl(s.ch1_leaks, "time")}. Agents found it and wrote new rules: ${s.attack_attempts} attack attempts, ${s.final_round_leaks || 0} violations. ` + (broke ? `<b style="color:var(--leak)">But only ${s.routine_still_working}/${s.routine_total} everyday questions still work: these rules are safe but too blunt.</b> Run it live and reject drafts like this.` : `And ${s.routine_still_working}/${s.routine_total} everyday questions still work.`) + " Click anything to dig in." : null);
+    const done = RUN.events.find(e => e.kind === "done"), s = (done && done.summary) || RUN.summary, broke = s && s.routine_still_working < s.routine_total;
+    guideEnd(s ? `<b>The result:</b> the rules looked right and still failed ${pl(S.leaks.filter(L => L.ver === 1).length || s.ch1_leaks, "time")}. Agents found it and wrote new rules: ${s.attack_attempts} attack attempts, ${s.final_round_leaks || 0} violations. ` + (broke ? `<b style="color:var(--leak)">But only ${s.routine_still_working}/${s.routine_total} everyday questions still work: these rules are safe but too blunt.</b>` : `And ${s.routine_still_working}/${s.routine_total} everyday questions still work.`) : null);
   }
 
   // ---------------- interactions
-  function edit(k) {
-    if (MODE !== "live" || S.busy) return;
-    const p = JSON.parse(JSON.stringify(curPolicy())), [r, c] = k.split("|");
-    if (c.startsWith("rec_")) { const reg = c.slice(4); p.records[r] = p.records[r].includes(reg) ? p.records[r].filter(x => x !== reg) : p.records[r].concat(reg); }
-    else if (c === "stats") p.aggregates[r] = { all: "own", own: "none", none: "all" }[p.aggregates[r]];
-    else if (c === "edit") { p.edit = p.edit || { cn: [], eu: [], gl: [] }; const own = { cn: ["CN"], eu: ["EU"], gl: [] }[r], cur = JSON.stringify([...(p.edit[r] || [])].sort());
-      const cycle = r === "gl" ? [[], ["CN", "EU"]] : [own, [], ["CN", "EU"]]; const i = cycle.findIndex(x => JSON.stringify([...x].sort()) === cur); p.edit[r] = cycle[(i + 1) % cycle.length].slice(); }
-    else p.relay = { open: "blocked", blocked: "on_behalf", on_behalf: "open" }[p.relay];
-    setDraft(p);
-  }
   function setDraft(p) {
     const strip = x => JSON.stringify({ r: x.records, e: x.edit, a: x.aggregates, m: x.min_group || 0, o: !!x.overlap_guard, l: x.relay });
     p.rules = E.policyRules(p); draftPolicy = strip(p) === strip(S.policy) ? null : p; render();
   }
   document.addEventListener("click", e => {
     const t = e.target;
-    if (t.closest("#bGuide")) { document.body.classList.add("guiding"); $("gexit").textContent = "Exit guide"; startGuide(); return; }
+    if (t.closest("#bGuide")) { startGuide(); return; }
     if (t.closest("#gnext")) { cont(); return; }
-    if (t.closest("#gexit")) { G.on = false; paused = false; $("guide").hidden = true; document.body.classList.remove("guiding"); SPOTS.forEach(id => $(id) && $(id).classList.remove("spot")); if (!pumping && QUEUE.length) { pumping = true; pump(); } return; }
+    if (t.closest("#gexit")) { G.on = false; paused = false; $("guide").hidden = true; closeModal(); document.body.classList.remove("guiding"); SPOTS.forEach(id => $(id) && $(id).classList.remove("spot")); if (!pumping && QUEUE.length) { pumping = true; pump(); } return; }
     if (t.closest("#bFind")) { if (MODE === "live") api("/api/find", { policy: draftPolicy ? Object.assign({}, draftPolicy, { version: S.policy.version + 1, rules: undefined }) : null }); else play("find"); return; }
     if (t.closest("#bFix")) { if (MODE === "live") api("/api/fix"); else play("fix"); return; }
     if (t.closest("#bAttack")) { if (MODE === "live") api("/api/attack"); else play("attack"); return; }
@@ -524,34 +683,30 @@ body.guiding .card{opacity:.55}body.guiding .card.spot{opacity:1;box-shadow:0 0 
     if (t.closest("#bApprove")) { api("/api/decide", { decision: "approve", by: "Reviewer", reason: ($("reason") || {}).value }); return; }
     if (t.closest("#bReject")) { const reason = ($("reason") || {}).value || "too broad"; api("/api/decide", { decision: "reject", by: "Reviewer", reason }).then(() => api("/api/fix", { feedback: reason })); return; }
     if (t.closest("#bData")) { dataModal(); return; }
+    const o = t.closest("[data-opt]"); if (o) { const [r, c, i] = o.dataset.opt.split("|"), q = JSON.parse(JSON.stringify(curPolicy())); cellOptions(r, c)[+i].set(q); setDraft(q); openModal(cellHTML(r + "|" + c)); return; }
     const g = t.closest("[data-g]");
     if (g) { if (MODE !== "live" || S.busy) return; const p = JSON.parse(JSON.stringify(curPolicy())), m = p.min_group || 0;
       if (g.dataset.g === "mg+") p.min_group = m ? Math.min(10, m + 1) : 2; if (g.dataset.g === "mg-") p.min_group = m <= 2 ? 0 : m - 1; if (g.dataset.g === "og") p.overlap_guard = !p.overlap_guard; setDraft(p); return; }
-    const lb = t.closest("[data-leak]"); if (lb) { S.sel = S.leaks[+lb.dataset.leak]; render(); return; }
+    const ag = t.closest("[data-agent]"); if (ag) { openModal(agentHTML(ag.dataset.agent)); return; }
+    const lb = t.closest("[data-leak]"); if (lb) { openModal(evidenceHTML(S.leaks[+lb.dataset.leak])); return; }
     const cell = t.closest("td.c");
-    if (cell) { const lk = S.leaks.filter(L => L.ver === S.policy.version && cell.dataset.k === leakCell(L));
-      if (lk.length && !draftPolicy) { S.sel = lk[0]; render(); $("evcard").scrollIntoView({ behavior: "smooth", block: "nearest" }); } else edit(cell.dataset.k); return; }
-    const dq = t.closest("[data-q]"); if (dq) { const d = S.byQ[+dq.dataset.q]; if (d) { if (d.leak) { S.sel = d.leak; render(); } pop(d); } return; }
-    if (t.closest(".x")) { $("pop").classList.remove("show"); $("modal").classList.remove("show"); return; }
-    if (t.id === "modal") $("modal").classList.remove("show");
+    if (cell) { const lk = draftPolicy ? [] : liveLeaks().filter(L => cell.dataset.k === leakCell(L));
+      if (lk.length) openModal(cellLeakHTML(cell.dataset.k, 0)); else openModal(cellHTML(cell.dataset.k)); return; }
+    const cl = t.closest("[data-cl]"); if (cl) { const [r, c, i] = cl.dataset.cl.split("|"); openModal(cellLeakHTML(r + "|" + c, +i)); return; }
+    const dq = t.closest("[data-q]"); if (dq) { const d = S.byQ[+dq.dataset.q]; if (d) openModal(d.leak ? evidenceHTML(d.leak) : `<h3>One question</h3>${qaLine(d.ev)}`); return; }
+    if (t.closest(".x") || t.id === "modal") { if (G.on && !$("gnext").hidden) return cont(); closeModal(); }
   });
-  function pop(d) {
-    const ev = d.ev;
-    $("popbody").innerHTML = `<b>${ev.attacker ? (ev.attacker === "explorer" ? "Explorer" : "Red team " + esc(ev.attacker.toUpperCase())) + " as the " : "The "}${NAME[ev.actor]}${ev.chain.length > 1 ? " (asked by the " + NAME[ev.chain[0]] + ")" : ""}</b>
-      <div>${ev.tool === "client_stats" ? esc(question(ev.args)) : esc(ev.english)}</div>${ev.change ? `<div>Risk rating: ${esc(ev.change.from)} → ${esc(ev.change.to)}</div>` : ""}
-      <pre>${esc(ev.tool + " " + JSON.stringify(ev.args))}\nGate: ${ev.decision.toUpperCase()} [${esc(ev.rule)}] ${esc(ev.reason || "")}${ev.value != null ? "\nAnswer: " + (ev.args.metric === "count" ? ev.value : eur(ev.value)) + (ev.n != null ? " (over " + ev.n + " clients)" : "") : ""}${ev.rows != null ? "\nRows returned: " + ev.rows : ""}${ev.answer ? "\nReply: " + esc(ev.answer) : ""}</pre>${d.leak ? `<div style="color:var(--leak);margin-top:6px;font-weight:600">⚠ ${esc(d.leak.story.headline)}</div>` : ""}`;
-    $("pop").classList.add("show");
-  }
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); if (e.key === "Enter" && e.target.closest && e.target.closest("g[data-agent]")) openModal(agentHTML(e.target.closest("g[data-agent]").dataset.agent)); });
 
   // ---------------- boot: live if server.js answers, else the recording, else the sample
   function load(src) { return new Promise(r => { const s = document.createElement("script"); s.src = src; s.onload = () => r(!!window.RUN); s.onerror = () => r(false); document.head.appendChild(s); }); }
-  renderER(); render();
+  renderSetup(); render();
   (async () => {
     try { if (location.protocol.startsWith("http")) { const r = await fetch("/api/state", { cache: "no-store" }); if (r.ok) { const st = await r.json(); if (st.live) return startLive(st); } } } catch (e) {}
     if (!(await load("data.js"))) await load("data.sample.js");
     if (window.RUN) startReplay(window.RUN); else { $("mode").textContent = "NO DATA"; S.status = "Run node server.js for the live tool."; render(); }
   })();
-  window.__poc = { S: () => S, play, next: () => nextSegment(), G, cont, paused: () => paused, queue: () => QUEUE.length };
+  window.__poc = { S: () => S, play, next: () => nextSegment(), G, cont, paused: () => paused };
 })();
 </script>
 </body>

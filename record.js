@@ -22,7 +22,7 @@ async function approve(p, s) {
   return /^y(es)?$/i.test(a) ? { decision: "approve", by: NAME + " (human)", reason: "" } : { decision: "reject", by: NAME + " (human)", reason: a || "rejected" };
 }
 
-const R = createRun({ chat, approve, log });
+const R = createRun({ chat, approve, log, model: MODEL });
 const t0 = Date.now();
 R.run().then(sum => {
   const data = { model: MODEL, recorded_at: new Date().toISOString(), sample: false, duration_s: Math.round((Date.now() - t0) / 1000), calls: LLM.stats.calls, cost_usd: +LLM.stats.cost.toFixed(4), cost_inr: +(LLM.stats.cost * 100).toFixed(2), events: R.EV, summary: sum };

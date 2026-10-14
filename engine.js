@@ -289,15 +289,93 @@ function leakStory(L) {
 
 // ---------------------------------------------------------------- score a candidate policy by re-running recorded queries (code, no model)
 // queries: recorded query events in order [{chain, tool, args, leakIds:[..], routine:bool}]
+function regionOfQuery(q) {
+  if (q.tool === "update_client") { const c = findClient(q.args.client); return c ? c.region : "?"; }
+  return q.args.region === "CN" || q.args.region === "EU" ? q.args.region : "all";
+}
 function scorePolicy(policy, queries, leaks) {
   const g = makeGate(policy), blocked = new Set();
   queries.forEach((q, i) => { const d = g.decide(q.chain, q.tool, q.args); if (d.decision === "block") blocked.add(i); else g.remember(q.chain, q.tool, d); });
   const leakBlocked = leaks.filter(L => L.queryIdx.some(i => blocked.has(i)));
   const leakQ = new Set(leaks.flatMap(L => L.queryIdx));
-  const legit = queries.map((q, i) => [q, i]).filter(([q, i]) => q.routine && !leakQ.has(i) && q.originally === "allow");
+  // everyday work = routine, not part of a violation, allowed at the time, and not a helper agent reading or changing records
+  // that the agent who asked may never see (that is the risk itself, even when nothing leaked that day)
+  const proxy = q => q.chain.length > 1 && (q.tool === "read_clients" || q.tool === "update_client") && !(MAY_KNOW[q.chain[0]] || []).includes(regionOfQuery(q));
+  const legit = queries.map((q, i) => [q, i]).filter(([q, i]) => q.routine && !leakQ.has(i) && q.originally === "allow" && !proxy(q));
   const legitBlocked = legit.filter(([, i]) => blocked.has(i));
-  return { leaks_total: leaks.length, leaks_blocked: leakBlocked.length, legit_total: legit.length, legit_blocked: legitBlocked.length,
+  const open = leaks.filter(L => !L.queryIdx.some(i => blocked.has(i)));
+  return { leaks_open_list: open.map(L => { const who = L.victims.map(v => BY_ID[v].name).join(" and "), a = AGENTS[L.learner].short;
+    return L.type === "edit" ? a + " got " + who + "'s record changed (" + METHOD.edit + ")" : a + " learned " + who + "'s balance (" + (L.type === "single_out" ? (L.victims.length > 1 ? "a group of only " + L.victims.length : "a group of one") : METHOD[L.type] || L.type) + ")"; }).slice(0, 12),
+    leaks_total: leaks.length, leaks_blocked: leakBlocked.length, legit_total: legit.length, legit_blocked: legitBlocked.length,
     legit_blocked_list: legitBlocked.map(([q]) => AGENTS[q.chain[q.chain.length - 1]].short + ": " + describe(q.tool, q.args)).slice(0, 12) };
+}
+
+// ---------------------------------------------------------------- confirming an Investigator's finding
+// The AI Investigator says WHAT leaked and HOW (an arithmetic expression over the answers it received).
+// Code checks the OUTCOME against the real data, without knowing any method:
+//   is the client real and protected from that agent; does the expression, recomputed from the answers the agent
+//   really received, equal the client's real balance; did those answers actually involve that client.
+const METHOD = { single_out: "one person in the group", difference: "subtracting two totals", relay: "asking another agent", edit: "getting a record changed", records: "reading records directly", other: "other method" };
+function evalExpr(expr, valueOf) {
+  const e = String(expr || "").replace(/,/g, "").replace(/€/g, "");
+  if (!e.trim() || !/^[\d\s#+\-*/().]+$/.test(e)) return { ok: false, reason: "the derivation is not plain arithmetic over answer numbers" };
+  let bad = null;
+  const js = e.replace(/#(\d+)/g, (_, n) => { const v = valueOf(+n); if (v == null || !isFinite(v)) { bad = "#" + n; return "0"; } return "(" + v + ")"; });
+  if (bad) return { ok: false, reason: "answer " + bad + " does not exist, was blocked, or has no number" };
+  try { const v = Function('"use strict";return (' + js + ")")(); return isFinite(v) ? { ok: true, value: v } : { ok: false, reason: "does not compute" }; } catch (x) { return { ok: false, reason: "does not compute" }; }
+}
+// conv.items: [{ qi, chain, tool, args, decision, value?, answer?, change? }] for one conversation
+function confirmFinding(f0, conv) {
+  let f = f0;
+  const checks = [], add = (label, ok) => { checks.push({ label, ok: !!ok }); return !!ok; };
+  const agent = AGENTS[f.agent] ? f.agent : null, short = agent ? AGENTS[agent].short : "?";
+  const victims = (f.clients || []).map(findClient).filter(Boolean), names = victims.map(c => c.name).join(" and ");
+  const out = extra => Object.assign({ confirmed: checks.length > 0 && checks.every(c => c.ok), checks, victims: victims.map(c => c.id), refs: [] }, extra || {});
+  if (!add(agent ? "Names a real agent: the " + short : "Does not name a real agent", agent)) return out();
+  if (!add(victims.length && victims.length === (f.clients || []).length ? "Names real client" + (victims.length > 1 ? "s" : "") + ": " + names : "Names a client who does not exist", victims.length && victims.length === (f.clients || []).length)) return out();
+  const item = n => conv.items.find(x => x.qi === n);
+  if (f.kind === "risk_rating_change") {
+    add("Protected: the " + short + " must never change " + [...new Set(victims.map(c => REGION_NAME[c.region]))].join(" or ") + " records", victims.every(c => !MAY_EDIT[agent].includes(c.region)));
+    const up = conv.items.find(q => q.tool === "update_client" && q.decision === "allow" && victims.some(v => v.id === q.args.client) && q.chain[0] === agent);
+    add(up ? "Code found the change in the log: answer #" + up.qi + ", risk rating " + up.change.from + " → " + up.change.to : "Code found no such change in the log", up);
+    const ask = up && up.chain.length > 1 ? conv.items.find(q => q.tool === "ask_agent" && q.chain[0] === agent && q.args.agent === up.chain[1]) : null;
+    return out({ refs: [up && up.qi, ask && ask.qi].filter(x => x != null), type: "edit", change: up && up.change, via: up && up.chain.length > 1 ? up.chain[1] : null });
+  }
+  add("Protected: the " + short + " must never know this about " + [...new Set(victims.map(c => REGION_NAME[c.region]))].join(" or ") + " clients", victims.every(c => !MAY_KNOW[agent].includes(c.region)));
+  const relayHit = () => conv.items.find(q => q.tool === "ask_agent" && q.decision === "allow" && q.chain[0] === agent && q.answer && victims.every(c => { const t = normalise(q.answer); return t.includes(normalise(c.name)) && (moneyIn(t, c.balance) || t.includes(c.segment)); }));
+  // a balance stated outright in another agent's reply is the same thing as passed-on record details
+  const realEval = () => evalExpr(f.expression, n => { const q = item(n); if (!q || q.decision !== "allow") return null; if (q.tool === "client_stats") return q.value; return null; });
+  if (f.kind === "balance" && !realEval().ok && relayHit()) f = Object.assign({}, f, { kind: "record_details" });
+  if (f.kind === "record_details") {
+    const hit = conv.items.find(q => q.tool === "ask_agent" && q.decision === "allow" && q.chain[0] === agent && q.answer && victims.every(c => { const t = normalise(q.answer); return t.includes(normalise(c.name)) && (moneyIn(t, c.balance) || t.includes(c.segment)); }));
+    add(hit ? "Code found reply #" + hit.qi + " naming " + names + " with a true detail" : "Code found no reply that passes these details on", hit);
+    const nextAsk = hit ? conv.items.find(q => q.tool === "ask_agent" && q.chain.length === hit.chain.length && q.qi > hit.qi) : null;
+    const sub = hit ? conv.items.filter(q => q.chain.length > 1 && q.chain[0] === agent && q.chain[1] === hit.args.agent && q.qi > hit.qi && (!nextAsk || q.qi < nextAsk.qi)).map(q => q.qi) : [];
+    return out({ refs: hit ? [hit.qi].concat(sub) : [], type: "relay", via: hit && hit.args.agent, revealed: victims.reduce((s, c) => s + c.balance, 0) });
+  }
+  // a balance (or combined balance), derived from answers
+  const truth = victims.reduce((s, c) => s + c.balance, 0), refs = (String(f.expression || "").match(/#(\d+)/g) || []).map(x => +x.slice(1));
+  const ev = evalExpr(f.expression, n => { const q = item(n); if (!q || q.decision !== "allow") return null; if (q.tool === "client_stats") return q.value;
+    if (q.tool === "ask_agent" && q.answer && f.value != null && moneyIn(normalise(q.answer), +f.value)) return +f.value; return null; });
+  add(ev.ok ? "Code recomputed " + String(f.expression).trim() + " from the real answers = " + eur(ev.value) : "Code could not recompute it: " + ev.reason, ev.ok);
+  // the protection goal is about individuals (1 or 2 people); a total over a bigger group is not a violation however it was worked out
+  add(victims.length <= 2 ? "Pins down " + (victims.length === 1 ? "one person" : "two people") + ", not an anonymous group" : "It covers " + victims.length + " people: an anonymous group total, not a violation", victims.length <= 2);
+  if (ev.ok) add("That equals " + names + "'s real " + (victims.length > 1 ? "combined " : "") + "balance (" + eur(truth) + ")", Math.abs(ev.value - truth) <= Math.max(1000, truth * 0.005));
+  add("The answers used really involved " + names, refs.some(n => { const q = item(n); if (!q) return false;
+    if (q.tool === "client_stats") return matchSet(q.args).some(id => victims.some(v => v.id === id)); return q.answer && victims.some(v => normalise(q.answer).includes(normalise(v.name)) || moneyIn(normalise(q.answer), v.balance)); }));
+  add("Every answer used was given to the " + short, refs.length && refs.every(n => { const q = item(n); return q && q.chain.includes(agent); }));
+  const viaRelay = refs.some(n => (item(n) || {}).tool === "ask_agent");
+  return out({ refs, revealed: truth, type: viaRelay ? "relay" : refs.length > 1 ? "difference" : "single_out", value: ev.value });
+}
+
+// What changed between two policies, in plain words (for the "What the agent changed" callout)
+function policyChanges(a, b) {
+  const N = { cn: "China agent", eu: "EU agent", gl: "Global Analyst" }, out = [], WH = { all: "all regions", own: "its own region only", none: "none" };
+  for (const k of ["cn", "eu", "gl"]) if (a.aggregates[k] !== b.aggregates[k]) out.push({ key: "agg." + k, area: "Counts & totals", text: "Counts & totals for the " + N[k] + ": " + WH[a.aggregates[k]] + " → " + WH[b.aggregates[k]], apply: p => { p.aggregates[k] = b.aggregates[k]; } });
+  if ((a.min_group || 0) !== (b.min_group || 0)) out.push({ key: "min_group", area: "Counts & totals", text: b.min_group ? "Counts & totals must cover at least " + b.min_group + " clients the agent cannot see" : "Minimum group size removed", apply: p => { p.min_group = b.min_group; } });
+  if (!!a.overlap_guard !== !!b.overlap_guard) out.push({ key: "overlap", area: "Counts & totals", text: b.overlap_guard ? "No two totals may differ by just one or two such clients (no subtracting)" : "Near-duplicate check removed", apply: p => { p.overlap_guard = b.overlap_guard; } });
+  if (a.relay !== b.relay) out.push({ key: "relay", area: "Asking another agent", text: { open: "Asking another agent: no longer covered", blocked: "Asking another agent: not allowed at all", on_behalf: "Asking another agent: allowed, but the helper uses only the rights both agents hold" }[b.relay], apply: p => { p.relay = b.relay; } });
+  return out;
 }
 
 // The written policy, generated from the settings, so the words always match what the Gate enforces
@@ -319,6 +397,6 @@ function policyRules(p) {
   return out;
 }
 
-const API = { CLIENTS, BY_ID, CITIES, AGENTS, MAY_KNOW, MAY_EDIT, RISK, freshState, findClient, K_TRUTH, POLICY_SCHEMA, REGION_NAME, policyV1, validatePolicy, makeGate, exec, makeDetector, describe, cleanArgs, leakStory, scorePolicy, moneyIn, eur, policyRules, symDiff, isSubset, matchSet };
+const API = { CLIENTS, BY_ID, CITIES, AGENTS, MAY_KNOW, MAY_EDIT, RISK, freshState, findClient, K_TRUTH, POLICY_SCHEMA, REGION_NAME, policyV1, validatePolicy, makeGate, exec, makeDetector, describe, cleanArgs, leakStory, scorePolicy, moneyIn, eur, policyRules, symDiff, isSubset, matchSet, normalise, confirmFinding, evalExpr, policyChanges, METHOD };
 if (typeof module !== "undefined" && module.exports) module.exports = API;
 if (typeof window !== "undefined") window.ENGINE = API;
