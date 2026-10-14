@@ -358,6 +358,25 @@ footer{font-size:12.5px;color:var(--muted)}
     if (x.tool === "update_client") return `<div class="qa">#${x.qi} ${esc(NAME[x.actor])}${x.chain.length > 1 ? " (asked by the " + NAME[x.chain[0]] + ")" : ""} changed ${esc((E.findClient(x.args.client) || {}).name || x.args.client)}'s risk rating${x.change ? ": <b>" + esc(x.change.from) + " → " + esc(x.change.to) + "</b>" : ""}<br>${x.decision === "allow" ? "✓ allowed: " + esc(x.reason) : "✗ blocked: " + esc(x.reason)}</div>`;
     return `<div class="qa">#${x.qi} ${esc(NAME[x.actor])}: ${esc(x.english)} → ${x.decision === "allow" ? (x.rows || 0) + " rows" : "blocked"}</div>`;
   }
+  // "Show the query and that it won't work": re-run the day's questions, in order, through the Gate under the policy now in force
+  let recheckCache = null;
+  function recheckMap() {
+    const key = S.policy.version + "|" + S.dots.length;
+    if (recheckCache && recheckCache.key === key) return recheckCache.map;
+    const g = E.makeGate(S.policy), map = {};
+    S.dots.map(d => d.ev).filter(ev => ev.phase !== "ch2").sort((a, b) => a.qi - b.qi).forEach(ev => {
+      const d = g.decide(ev.chain, ev.tool, ev.args); map[ev.qi] = d; if (d.decision === "allow") g.remember(ev.chain, ev.tool, d); });
+    recheckCache = { key, map }; return map;
+  }
+  function recheckHTML(L) {
+    if (!(S.policy.version > L.ver)) return "";
+    const m = recheckMap(), qs = (L.queryIdx || []).slice().sort((a, b) => a - b).map(q => S.byQ[q] && S.byQ[q].ev).filter(x => x && m[x.qi]);
+    if (!qs.length) return "";
+    const stopped = qs.some(x => m[x.qi].decision !== "allow");
+    return `<div class="sec" style="background:${stopped ? "var(--okbg)" : "var(--leakbg)"}"><i>The same questions under policy v${S.policy.version}</i>` +
+      qs.map(x => `<div class="qa">#${x.qi} ${esc(NAME[x.actor])}${x.chain.length > 1 ? " (asked by the " + NAME[x.chain[0]] + ")" : ""}: ${esc(x.english)}<br>${m[x.qi].decision === "allow" ? "✓ still allowed" : "<b>✗ blocked</b>: " + esc(m[x.qi].reason || "")}</div>`).join("") +
+      `<div style="margin-top:4px;font-weight:600;color:${stopped ? "var(--ok)" : "var(--leak)"}">${stopped ? "This violation cannot happen under the new policy." : "Not stopped by the new policy."}</div></div>`;
+  }
   function evidenceHTML(L) {
     const qs = (L.queryIdx || []).map(q => S.byQ[q] && S.byQ[q].ev).filter(Boolean), who = NAME[L.learner];
     const task = (S.tasks.find(t => t.id === L.task) || {}).text, ex = (S.explorers || []).find(x => x.id === L.attacker), at = (S.attackers || []).find(x => x.id === L.attacker);
@@ -376,7 +395,7 @@ footer{font-size:12.5px;color:var(--muted)}
         <ul class="checks">${checks.map(c => `<li class="${c.ok ? "" : "bad"}">${esc(c.label)}</li>`).join("")}</ul>${L.code_agrees ? '<div class="hint" style="margin-top:4px">The backstop code check caught it too.</div>' : ""}</div>`;
     return `<div class="tags"><span class="mtag">${esc(mlabel(L))}</span><span class="fby ${L.found_by === "code" ? "code" : ""}">${L.found_by === "code" ? "CAUGHT BY CODE CHECK" : "FOUND BY AI INVESTIGATOR · CONFIRMED BY CODE"}</span>${L.ver !== S.policy.version ? `<span class="hint">under policy v${L.ver}</span>` : ""}</div>
       <h3>${esc(L.story.headline)}</h3><div class="amt">${L.type === "edit" ? "risk rating " + esc((L.change || {}).from) + " → " + esc((L.change || {}).to) : eur(L.revealed)}</div>
-      ${ask}<div class="sec"><i>What happened</i>${qs.map(x => qaLine(x, who)).join("")}</div><div class="rv">${rv}</div>${how}${roster(L.victimRegion, cov, vic)}`;
+      ${ask}<div class="sec"><i>What happened</i>${qs.map(x => qaLine(x, who)).join("")}</div><div class="rv">${rv}</div>${recheckHTML(L)}${how}${roster(L.victimRegion, cov, vic)}`;
   }
   function cellHTML(k) {
     const [r, c] = k.split("|"), p = curPolicy(), ct = cellText(p, r, c), lock = lockLabel(r, c), all = S.dots.concat(...S.walls.map(w => w.dots)).filter(d => cellOf(d.ev) === k);
@@ -650,7 +669,8 @@ footer{font-size:12.5px;color:var(--muted)}
         if (MODE !== "live") narrate(proposalLine(S.proposal || {}) + ` <b>${ev.decision === "approve" ? "Approved" : "Rejected"} by ${esc(ev.by)}.</b>`, { spot: ["propcard"], scrollTo: "propcard", pause: true });
         else if (ev.decision !== "approve") narrate("Rejected. The Policy agent reads your reason and drafts again.", { spot: ["propcard"] });
         break;
-      case "policy": narrate(`<b>Policy v${ev.version} is in force.</b> The changed cells are outlined. Now let's attack it.`, { spot: ["polcard"], pause: true, label: "▶ Attack it", next: () => act("attack") }); break;
+      case "policy": { const m = recheckMap(), old = S.leaks.filter(L => L.ver < ev.version), stop = old.filter(L => (L.queryIdx || []).some(q => m[q] && m[q].decision !== "allow")).length;
+        narrate(`<b>Policy v${ev.version} is in force.</b> The changed cells are outlined. The same ${pl(old.length, "violation")} re-run through the Gate: <b>${stop} now blocked</b>${stop ? " (click any violation to see its question refused)" : ""}. Now let's attack it.`, { spot: ["polcard"], pause: true, label: "▶ Attack it", next: () => act("attack") }); break; }
       case "wall": narrate("<b>Three red-team agents try every angle:</b> tiny groups, subtracting totals, getting another agent to do it. The Investigator reviews every attack.", { spot: ["wallcard"] }); break;
       case "wall_end": narrate(ev.leaks ? `<b>${ev.attempts} attempts; ${pl(ev.leaks, "violation")} got through.</b> The agents will have to fix it again.` : `<b>${ev.attempts} attempts. Every one hit the wall.</b>`, { spot: ["wallcard"], pause: true, tone: ev.leaks ? "red" : "green",
         label: MODE === "live" ? "▶ Run the same day again" : "Continue ›", next: () => { if (MODE === "live") act("find"); else { const nx = nextSegment(); if (nx && nx !== "done") act(nx); else finalReplay(); } } }); break;
