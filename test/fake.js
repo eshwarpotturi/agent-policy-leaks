@@ -114,7 +114,8 @@ async function chat(msgs, opts) {
     const p = first ? { rules: [R1, { agents: ["any"], action: "ask_agent", why: "Stop agents passing data to each other." }], rationale: "Close small groups and the relay route." }
       : { rules: [R1, { agents: ["any"], action: "counts_totals", data: "not_readable_by_asker", differs_below: 3, why: "No subtracting two near-identical totals." },
           { agents: ["any"], action: "read_records", acting: "for_another_agent", data: "not_readable_by_asker", why: "A helper may not read records for an agent that may not read them." },
-          { agents: ["any"], action: "change_record", acting: "for_another_agent", data: "not_readable_by_asker", why: "A helper may not change records for an agent that may not change them." }], rationale: "Keeps legitimate help; stops differences and relays." };
+          { agents: ["any"], action: "change_record", acting: "for_another_agent", data: "not_readable_by_asker", why: "A helper may not change records for an agent that may not change them." },
+          { agents: ["any"], action: "change_record", effect: "ask_person", why: "Every change to a client record gets a person's sign-off." }], rationale: "Keeps legitimate help; stops differences and relays." };
     return { role: "assistant", content: null, tool_calls: [{ id: "p" + draft, type: "function", function: { name: "propose_policy", arguments: JSON.stringify(p) } }] };
   }
   let plan, fin;

@@ -123,4 +123,11 @@ ok("rules: invalid rules are rejected, and the sentence comes from the rule", ()
   assert(E.validateRule(E.normaliseRule({ action: "read_records", protected_group_below: 3 }, 0)).length);
   assert.equal(E.describeRule(E.normaliseRule({ agents: ["gl"], action: "ask_agent" }, 0)), "The Global Analyst may not ask another agent for help.");
 });
+ok("rules: ask_person holds a change for the client's relationship manager, and counts as work still done", () => {
+  const p = withRules([{ action: "change_record", effect: "ask_person" }]), d = E.makeGate(p).decide(["eu"], "update_client", { client: "E14", risk_rating: "high" });
+  assert.equal(d.decision, "ask"); assert.equal(d.approver.name, "Sophie Martin");
+  const sc = E.scorePolicy(p, [{ chain: ["eu"], tool: "update_client", args: { client: "E14", risk_rating: "high" }, routine: true, originally: "allow" }], []);
+  assert.equal(sc.legit_blocked, 0); assert.equal(sc.legit_held, 1);
+  assert(E.validateRule(E.normaliseRule({ action: "read_records", effect: "ask_person" }, 0)).length);
+});
 console.log(n + " tests passed");

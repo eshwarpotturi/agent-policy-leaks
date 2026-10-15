@@ -110,7 +110,24 @@ function validatePolicy(p, base) {
 // ---------------------------------------------------------------- the rule language the Policy agent writes in
 // Every rule REFUSES something (deny-only), so an AI-written rule can take access away but never grant it.
 // A rule applies to a call when every condition it names holds; the first matching rule refuses the call.
+// the people behind the agents (fictional): each agent acts on behalf of one of them, and they approve changes to their clients' records
+const PEOPLE = {
+  cn: { name: "Mei Lin", role: "relationship manager, Shanghai" },
+  eu: { name: "Sophie Martin", role: "relationship manager, Paris" },
+  gl: { name: "Rahul Mehta", role: "board reporting lead, Singapore" },
+};
+const APPROVER = { CN: PEOPLE.cn, EU: PEOPLE.eu };
+// each agent's registry entry, like an employee record (fictional)
+const REGISTRY = {
+  cn: { version: "1.4", owner: "Head of Wealth, China", serves: "Mei Lin, relationship manager, Shanghai", risk: "High: works with individual client data", approvals: "Changes to a client record: that client's relationship manager", review: "15 Jan 2027" },
+  eu: { version: "1.4", owner: "Head of Wealth, EU", serves: "Sophie Martin, relationship manager, Paris", risk: "High: works with individual client data", approvals: "Changes to a client record: that client's relationship manager", review: "15 Jan 2027" },
+  gl: { version: "2.1", owner: "Head of Management Reporting", serves: "Rahul Mehta, board reporting lead, Singapore", risk: "Medium: counts and totals only", approvals: "None needed: it changes nothing", review: "15 Jan 2027" },
+  investigator: { version: "2.0", owner: "Head of AI Risk", serves: "The AI risk team", risk: "High: reads every conversation", approvals: "Its findings count only once code confirms them", review: "15 Dec 2026" },
+  policy: { version: "2.0", owner: "Head of AI Risk", serves: "The AI risk team", risk: "High: proposes access changes", approvals: "Every policy change: a named reviewer", review: "15 Dec 2026" },
+  test: { version: "1.0", owner: "AI risk testing team", serves: "Sandbox only, synthetic data", risk: "Test agent: never runs on live data", approvals: "None: it only probes", review: "15 Dec 2026" },
+};
 const RULE_SCHEMA = {
+  effect: ["refuse", "ask_person"],
   action: ["read_records", "change_record", "counts_totals", "ask_agent"],
   data: ["any", "not_readable_by_asker", "readable_by_asker"],
   acting: ["any", "alone", "for_another_agent"],
@@ -121,7 +138,7 @@ const RULE_SCHEMA = {
 function normaliseRule(r, i) {
   const list = (x, ok) => (Array.isArray(x) ? x : x == null || x === "" ? [] : [x]).map(String).filter(v => ok.includes(v));
   const num = x => (x == null || x === "" || +x === 0 ? null : Math.round(+x));
-  return { id: "R" + (i + 1), agents: list(r.agents, RULE_SCHEMA.agents).length ? list(r.agents, RULE_SCHEMA.agents) : ["any"], action: r.action, data: r.data || "any", acting: r.acting || "any",
+  return { id: "R" + (i + 1), effect: r.effect === "ask_person" ? "ask_person" : "refuse", agents: list(r.agents, RULE_SCHEMA.agents).length ? list(r.agents, RULE_SCHEMA.agents) : ["any"], action: r.action, data: r.data || "any", acting: r.acting || "any",
     asked_by: list(r.asked_by, ["cn", "eu", "gl"]), to_agents: list(r.to_agents, ["cn", "eu", "gl"]), metrics: list(r.metrics, RULE_SCHEMA.metrics), filters: list(r.filters, RULE_SCHEMA.filters),
     protected_group_below: num(r.protected_group_below), differs_below: num(r.differs_below), why: String(r.why || r.text || "").slice(0, 200) };
 }
@@ -134,6 +151,7 @@ function validateRule(r) {
   if (r.action !== "counts_totals" && (r.metrics.length || r.filters.length || r.protected_group_below || r.differs_below)) e.push(at + "metrics, filters, protected_group_below and differs_below only apply to counts_totals");
   if (r.action !== "ask_agent" && r.to_agents.length) e.push(at + "to_agents only applies to ask_agent");
   if (r.asked_by.length && r.acting === "alone") e.push(at + "asked_by needs acting = for_another_agent");
+  if (r.effect === "ask_person" && r.action !== "change_record") e.push(at + "effect ask_person only applies to change_record (a person approves changes; reads and totals are allowed or refused)");
   if (r.acting === "for_another_agent" && r.asked_by.length && !r.agents.includes("any") && r.agents.every(a => r.asked_by.includes(a)) && r.asked_by.every(a => r.agents.includes(a))) e.push(at + "an agent never acts for itself, so this rule can never apply");
   if (r.action === "ask_agent" && r.to_agents.length && !r.agents.includes("any") && r.agents.every(a => r.to_agents.includes(a)) && r.to_agents.length === 1) e.push(at + "an agent cannot ask itself, so this rule can never apply");
   return e;
@@ -163,11 +181,16 @@ function describeRule(r) {
     t = lead + " get " + m + " " + (c.length ? c.join(" and ") : "about " + data);
   }
   if (r.filters.length) t += " using " + orList(r.filters.map(f => RF[f]));
+  if (r.effect === "ask_person") {
+    const scope = r.data === "not_readable_by_asker" ? " of a client " + whose + " may not change" : r.data === "readable_by_asker" ? " of a client " + whose + " may change" : "";
+    return helper + (named ? "Changes" + scope + " by " + named : "Every change to a client record" + scope) + " must first be approved by the client's relationship manager.";
+  }
   return helper + t + ".";
 }
 // short label for a matrix cell
 function shortRule(r) {
   const c = [];
+  if (r.effect === "ask_person") return r.id + ": changes need a person's approval";
   if (r.protected_group_below) c.push("groups of " + r.protected_group_below + "+ only");
   if (r.differs_below) c.push("no near-duplicates");
   if (r.filters.length) c.push("no " + r.filters.map(f => f.replace("_", " ")).join("/") + " filters");
@@ -257,7 +280,10 @@ function makeGate(policy) {
     const d = baseDecide(chain, tool, args);
     if (d.decision !== "allow" || !(policy.deny_rules || []).length) return d;
     const r = policy.deny_rules.find(r => ruleHits(r, chain, tool, d));
-    return r ? Object.assign({}, d, { decision: "block", rule: r.id, reason: "rule " + r.id + ": " + describeRule(r) }) : d;
+    if (!r) return d;
+    if (r.effect === "ask_person") { const c = BY_ID[(d.set || [])[0]] || {}, who = APPROVER[c.region] || { name: "a relationship manager", role: "" };
+      return Object.assign({}, d, { decision: "ask", rule: r.id, approver: who, reason: "rule " + r.id + ": held until " + who.name + " (" + who.role + ") approves it; not applied" }); }
+    return Object.assign({}, d, { decision: "block", rule: r.id, reason: "rule " + r.id + ": " + describeRule(r) });
   }
   function baseDecide(chain, tool, args) {
     const a = cleanArgs(tool, args), callee = chain[chain.length - 1], eff = effective(chain);
@@ -402,18 +428,19 @@ function regionOfQuery(q) {
 }
 function scorePolicy(policy, queries, leaks) {
   const g = makeGate(policy), blocked = new Set();
-  queries.forEach((q, i) => { const d = g.decide(q.chain, q.tool, q.args); if (d.decision === "block") blocked.add(i); else g.remember(q.chain, q.tool, d); });
+  const held = new Set();
+  queries.forEach((q, i) => { const d = g.decide(q.chain, q.tool, q.args); if (d.decision === "block") blocked.add(i); else if (d.decision === "ask") { blocked.add(i); held.add(i); } else g.remember(q.chain, q.tool, d); });
   const leakBlocked = leaks.filter(L => L.queryIdx.some(i => blocked.has(i)));
   const leakQ = new Set(leaks.flatMap(L => L.queryIdx));
   // everyday work = routine, not part of a violation, allowed at the time, and not a helper agent reading or changing records
   // that the agent who asked may never see (that is the risk itself, even when nothing leaked that day)
   const proxy = q => q.chain.length > 1 && (q.tool === "read_clients" || q.tool === "update_client") && !(MAY_KNOW[q.chain[0]] || []).includes(regionOfQuery(q));
   const legit = queries.map((q, i) => [q, i]).filter(([q, i]) => q.routine && !leakQ.has(i) && q.originally === "allow" && !proxy(q));
-  const legitBlocked = legit.filter(([, i]) => blocked.has(i));
+  const legitBlocked = legit.filter(([, i]) => blocked.has(i) && !held.has(i)), legitHeld = legit.filter(([, i]) => held.has(i));
   const open = leaks.filter(L => !L.queryIdx.some(i => blocked.has(i)));
   return { leaks_open_list: open.map(L => { const who = L.victims.map(v => BY_ID[v].name).join(" and "), a = AGENTS[L.learner].short;
     return L.type === "edit" ? a + " got " + who + "'s record changed (" + METHOD.edit + ")" : a + " learned " + who + "'s balance (" + (L.type === "single_out" ? (L.victims.length > 1 ? "a group of only " + L.victims.length : "a group of one") : METHOD[L.type] || L.type) + ")"; }).slice(0, 12),
-    leaks_total: leaks.length, leaks_blocked: leakBlocked.length, legit_total: legit.length, legit_blocked: legitBlocked.length,
+    legit_held: legitHeld.length, leaks_total: leaks.length, leaks_blocked: leakBlocked.length, legit_total: legit.length, legit_blocked: legitBlocked.length,
     legit_blocked_list: legitBlocked.map(([q]) => AGENTS[q.chain[q.chain.length - 1]].short + ": " + describe(q.tool, q.args)).slice(0, 12) };
 }
 
@@ -509,6 +536,6 @@ function policyRules(p) {
   return out;
 }
 
-const API = { RULE_SCHEMA, normaliseRule, validateRule, describeRule, shortRule, CLIENTS, BY_ID, CITIES, AGENTS, MAY_KNOW, MAY_EDIT, RISK, freshState, findClient, K_TRUTH, POLICY_SCHEMA, REGION_NAME, policyV1, validatePolicy, makeGate, exec, makeDetector, describe, cleanArgs, leakStory, scorePolicy, moneyIn, eur, policyRules, symDiff, isSubset, matchSet, normalise, confirmFinding, evalExpr, policyChanges, METHOD };
+const API = { PEOPLE, APPROVER, REGISTRY, RULE_SCHEMA, normaliseRule, validateRule, describeRule, shortRule, CLIENTS, BY_ID, CITIES, AGENTS, MAY_KNOW, MAY_EDIT, RISK, freshState, findClient, K_TRUTH, POLICY_SCHEMA, REGION_NAME, policyV1, validatePolicy, makeGate, exec, makeDetector, describe, cleanArgs, leakStory, scorePolicy, moneyIn, eur, policyRules, symDiff, isSubset, matchSet, normalise, confirmFinding, evalExpr, policyChanges, METHOD };
 if (typeof module !== "undefined" && module.exports) module.exports = API;
 if (typeof window !== "undefined") window.ENGINE = API;
