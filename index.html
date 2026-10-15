@@ -94,6 +94,12 @@ pre.prompt{white-space:pre-wrap;font-family:"IBM Plex Mono",monospace;font-size:
 .bcm{font-size:12px;color:var(--muted)}
 .bigchg.compact .bct{font-size:15.5px}.bigchg.compact .bcr{font-size:13px}
 details.callout>summary{cursor:pointer;list-style:none}details.callout>summary::-webkit-details-marker{display:none}
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:2px 0 4px}
+.bt{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:2px;align-content:start}
+.bt b{font-size:26px;line-height:1.1;font-family:"IBM Plex Mono",monospace;color:#9aa2b1}.bt span{font-size:12.5px;color:#3d4452;font-weight:600}.bt i{font-style:normal;font-size:11px;color:var(--muted)}
+.bt.red{border-color:#f0b4b2;background:var(--leakbg)}.bt.red b{color:var(--leak)}.bt.green{border-color:#a8d8bc;background:var(--okbg)}.bt.green b{color:var(--ok)}
+.impact{background:#fff3e6;border-left:4px solid #e07b00;border-radius:6px;padding:7px 10px;font-size:14.5px;font-weight:600;color:#6b3a00}
+@media (max-width:900px){.board{grid-template-columns:repeat(2,1fr)}}
 .guide[hidden]{display:none}.guards[hidden]{display:none}
 .svgag{cursor:pointer}.svgag:hover rect{filter:drop-shadow(0 2px 6px rgba(20,26,36,.25))}
 body.guiding .guide{z-index:25}
@@ -165,19 +171,20 @@ footer{font-size:12.5px;color:var(--muted)}
 <body>
 <div class="wrap">
   <header>
-    <h1>Policy leak finder<small>AI agents work under your permission policy · an AI Investigator flags what goes wrong · code confirms it</small></h1>
+    <h1>Policy leak finder<small>AI agents work under your permission policy · an AI reviewer flags what goes wrong · code confirms it</small></h1>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span id="cost" class="hint"></span><span id="mode" class="mode">…</span><button class="btn pri" id="bGuide">▶ Guided run</button></div>
   </header>
   <div class="guide" id="guide" hidden><div id="gtext"></div><div class="gbtns"><button class="btn pri" id="gnext" hidden>Continue ›</button><button class="btn sm" id="gexit">Exit guide</button></div></div>
 
+  <div class="board" id="board"></div>
   <section class="card" id="dbcard">
     <h2><span>The setup</span><button class="btn sm" id="bData">View the 30 client rows</button></h2>
     <div class="two"><div class="er" id="er"></div>
       <div><div class="goal" id="goal"></div>
         <div class="flag"><b class="t">How violations are flagged</b><ol>
-          <li>After every conversation, an <b>AI Investigator</b> reads every question, answer and message, and reports anything an agent learned or changed that it must never.</li>
+          <li>After every conversation, an <b>AI reviewer</b> reads every question, answer and message, and reports anything an agent learned or changed that it must never.</li>
           <li><b>Code confirms</b> each finding against the real data: is it true, and can it really be worked out from answers that agent received? Unconfirmed claims are rejected.</li>
-          <li>Simple <b>code checks</b> run as a backstop, and show anything the Investigator missed.</li></ol></div></div></div>
+          <li>Simple <b>code checks</b> run as a backstop, and show anything the AI reviewer missed.</li></ol></div></div></div>
     <div class="roster" id="roster"></div>
   </section>
 
@@ -210,7 +217,7 @@ footer{font-size:12.5px;color:var(--muted)}
   const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const eur = n => n == null ? "n/a" : "€" + Math.round(n).toLocaleString("en-US");
   const short = n => n >= 1e6 ? "€" + (n / 1e6).toFixed(1) + "M" : "€" + Math.round(n / 1e3) + "k";
-  const ROWS = ["cn", "eu", "gl"], COLS = [["rec_CN", "Read China clients"], ["rec_EU", "Read EU clients"], ["edit", "Change client records"], ["stats", "Counts & totals"], ["relay", "Asking another agent"]];
+  const ROWS = ["cn", "eu", "gl"], COLS = [["rec_CN", "Read China clients"], ["rec_EU", "Read EU clients"], ["edit", "Change client records"], ["stats", "Reports & totals"], ["relay", "Asking another agent"]];
   const NAME = { cn: "China agent", eu: "EU agent", gl: "Global Analyst" }, BASE = { cn: "Shanghai · China clients", eu: "Paris · EU clients", gl: "Singapore · board pack" };
   const CITY = { CN: ["Shanghai", "Beijing", "Shenzhen"], EU: ["Paris", "Madrid", "Frankfurt", "Milan"] };
   const GOAL = [
@@ -250,7 +257,7 @@ footer{font-size:12.5px;color:var(--muted)}
         if (same) break;
         S.leaks.push(L);
         (L.queryIdx || []).forEach(q => { const d = S.byQ[q]; if (d) { d.st = "leak"; d.leak = d.leak || L; } }); break; }
-      case "explore": S.status = (ev.explorers ? ev.explorers.length + " explorer agents" : "An explorer agent") + " with the China agent's permissions are probing on purpose…"; break;
+      case "explore": S.status = (ev.explorers ? ev.explorers.length + " test agents" : "A test agent") + " with the China agent's permissions are probing on purpose…"; break;
       case "chapter_end": S.dayDone = ev; S.status = ""; S.inv = null; break;
       case "fix_start": S.drafts = S.drafts.filter(d => d.round !== ev.round); S.proposal = null; S.approval = null; S.status = "The Policy agent is drafting; code re-tests every draft on every question from the day…"; break;
       case "draft": ev = Object.assign({}, ev, { score: fixScore(ev.score) }); if (!S.drafts.length || S.drafts[S.drafts.length - 1].round !== ev.round) { S.proposal = null; S.approval = null; } S.drafts.push(ev); S.status = "Draft " + ev.n + (ev.score ? ": stops " + ev.score.leaks_blocked + "/" + ev.score.leaks_total + " violations, breaks " + ev.score.legit_blocked + " everyday questions" : " was invalid"); break;
@@ -262,7 +269,7 @@ footer{font-size:12.5px;color:var(--muted)}
         S.prevPolicy = withRules(ev.from || S.policy); S.policy = withRules(ev.policy); S.changed = new Set();
         for (const r of ROWS) for (const [c] of COLS) if (JSON.stringify(cellText(S.prevPolicy, r, c)) !== JSON.stringify(cellText(S.policy, r, c))) S.changed.add(r + "|" + c);
         S.newRules = new Set(S.policy.rules.filter(x => !S.prevPolicy.rules.includes(x))); draftPolicy = null; break; }
-      case "wall": S.walls.push({ round: ev.round, version: ev.version, dots: [] }); S.status = "Three red-team agents are attacking policy v" + ev.version + "…"; break;
+      case "wall": S.walls.push({ round: ev.round, version: ev.version, dots: [] }); S.status = "Three attack agents are attacking policy v" + ev.version + "…"; break;
       case "wall_end": { const w = S.walls[S.walls.length - 1]; if (w) w.end = ev; S.status = ""; S.inv = null; break; }
       case "busy": S.busy = ev.job; break;
       case "idle": S.busy = null; if (ev.calls != null) $("cost").textContent = ev.calls + " model calls · ₹" + ev.cost_inr; break;
@@ -306,16 +313,41 @@ footer{font-size:12.5px;color:var(--muted)}
   const routeCell = L => L.learner + "|" + (L.type === "relay" || L.via ? "relay" : L.type === "edit" ? "edit" : "stats");
   const cellOf = ev => ev.tool === "ask_agent" ? ev.chain[0] + "|relay" : ev.actor + "|" + (ev.tool === "client_stats" ? "stats" : ev.tool === "update_client" ? "edit" : "rec_" + (ev.args.region || "CN"));
   const liveLeaks = () => S.leaks.filter(L => L.ver === S.policy.version);
-  // canonical method label, worked out from what the agent actually did (the Investigator's own words stay in the popup)
+  // canonical method label, worked out from what the agent actually did (the reviewer's own words stay in the popup)
   const NARROW = a => a && ["min_balance", "max_balance", "exclude_city"].some(k => a[k] != null && a[k] !== "");
   const mlabel = L => {
-    if (L.type === "edit") return "Getting a record changed";
-    if (L.type === "relay" || (L.via && L.type !== "single_out" && L.type !== "difference")) return "Asking another agent";
-    if (L.type === "difference") return "Subtracting two totals";
+    if (L.type === "edit") return "Record changed without authority";
+    if (L.type === "relay" || (L.via && L.type !== "single_out" && L.type !== "difference")) return "Passed on by another agent";
+    if (L.type === "difference") return "Exposed by subtracting two reports";
     if (L.type === "single_out") { const qs = (L.queryIdx || []).map(q => S.byQ[q] && S.byQ[q].ev).filter(Boolean);
-      return qs.some(e => NARROW(e.args)) ? "Narrowing with filters" : "Too small a group"; }
+      return qs.some(e => NARROW(e.args)) ? "Exposed by a narrowly filtered report" : "Exposed by an 'anonymous' report"; }
     return String(L.method || METHOD[L.type] || "Other").replace(/^./, c => c.toUpperCase()); };
 
+  // the scoreboard: the four numbers a business person reads first, filled in as the run plays
+  function renderBoard() {
+    const v1 = S.leaks.filter(L => L.ver === 1), live = S.leaks.filter(L => L.ver === S.policy.version && S.policy.version > 1);
+    const fixed = S.policy.version > 1, P = S.proposal && S.proposal.policy && S.proposal.policy.version === S.policy.version ? S.proposal : null;
+    const atk = S.walls.filter(w => w.version === S.policy.version), atkN = atk.reduce((n, w) => n + w.dots.length, 0), atkLeaks = S.leaks.filter(L => L.phase === "ch2" && L.ver === S.policy.version).length;
+    const approved = S.approval && S.approval.decision === "approve";
+    const tile = (big, label, tone, sub) => `<div class="bt ${tone || ""}"><b>${big}</b><span>${label}</span>${sub ? `<i>${sub}</i>` : ""}</div>`;
+    const sc = P && P.score;
+    $("board").innerHTML =
+      tile(S.dayDone || v1.length ? v1.length : "—", "violations found in a normal day", v1.length ? "red" : "", S.dayDone ? "every one allowed by the rules as written" : "") +
+      tile(fixed ? (S.dayDone && S.policy.version > 1 ? live.length : 0) : "—", "violations after the AI's fix", fixed ? "green" : "", fixed ? "re-tested on the whole day" : "") +
+      tile(sc ? (sc.legit_total - sc.legit_blocked) + "/" + sc.legit_total : "—", "everyday tasks still working", sc && !sc.legit_blocked ? "green" : sc ? "red" : "", sc && sc.legit_held ? sc.legit_held + " now need a sign-off" : "") +
+      tile(atk.length && atk[atk.length - 1].end ? (atkN - atkLeaks) + "/" + atkN : "—", "attack attempts stopped", atk.length && atk[atk.length - 1].end ? (atkLeaks ? "red" : "green") : "", "") +
+      tile(approved ? "✓" : "—", "a person approved the change", approved ? "green" : "", approved ? esc(S.approval.by) : "");
+  }
+  // what a violation would mean for the bank, in one line
+  function impact(L) {
+    const reg = L.victimRegion || (E.BY_ID[(L.victims || [])[0]] || {}).region, n = (L.victimNames || []).length;
+    const whose = n === 1 ? L.victimNames[0] + "'s" : n + " clients'";
+    if (L.type === "edit") return `${reg === "EU" ? "An EU" : "A China"} client's record was changed for an agent with no authority over it: an unauthorised change of the kind auditors and regulators flag.`;
+    if (L.learner === "gl") return `${whose} private balance${n === 1 ? "" : "s"} came out of an "anonymous" board report: a client-confidentiality breach.`;
+    if (L.learner === "cn" && reg === "EU") return `${whose} private data reached an agent working in China: a cross-border privacy breach of the kind GDPR is written to prevent.`;
+    if (L.learner === "eu" && reg === "CN") return `${whose} private data reached an agent outside China: the kind of cross-border transfer China's data laws restrict.`;
+    return `${whose} private data reached an agent that must never see it.`;
+  }
   // the page shows a violation reported twice (a group and one of its people) once; keep the draft scores consistent with that
   function fixScore(sc) {
     if (!sc) return sc; const shown = S.leaks.filter(L => L.ver === S.policy.version).length, dup = sc.leaks_total - shown;
@@ -344,6 +376,7 @@ footer{font-size:12.5px;color:var(--muted)}
       h += "</tr>";
     }
     $("mx").innerHTML = h;
+    renderBoard();
     { const P = S.proposal && S.proposal.policy && S.proposal.policy.version === S.policy.version ? S.proposal : null;
       const groups = S.prevPolicy && S.policy.version > S.prevPolicy.version && !draftPolicy ? changeGroups(S.prevPolicy, S.policy, P && P.changes) : [];
       $("chgbanner").innerHTML = groups.length ? `<div class="bigwrap"><div class="bigh">Policy v${S.policy.version} is in force · what changed from v${S.prevPolicy.version}</div>${changeCardsHTML(groups, true)}<div class="hint">Everything else in the matrix stays as it was. Changed cells are outlined below.</div></div>` : ""; }
@@ -359,7 +392,7 @@ footer{font-size:12.5px;color:var(--muted)}
       $("vlist").innerHTML = `<b class="t">${pl(S.leaks.length, "violation")} · ${pl(Object.keys(groups).length, "different method")}</b>` + Object.entries(groups).map(([m, arr]) =>
         `<div class="vgrp"><div class="vh"><span class="mtag">${esc(m)}</span><b>${arr.length}</b><span class="hint">${arr.every(([L]) => L.found_by !== "code") ? "found by AI, confirmed by code" : arr.some(([L]) => L.found_by !== "code") ? "AI + code check" : "code check"}</span></div><div class="chips">` +
         arr.map(([L, i]) => `<button class="vchip ${L.found_by === "code" ? "code" : ""}" data-leak="${i}" title="${esc(L.story.headline)}">${NAME[L.learner].replace(/ agent| Analyst/, "")} → ${esc((L.victimNames || []).join(", ") || "?")}${L.ver !== S.policy.version ? ` <i>v${L.ver}</i>` : ""}</button>`).join("") + `</div></div>`).join("") +
-        (S.rejected.length ? `<div class="hint">${pl(S.rejected.length, "Investigator claim")} rejected by code (not counted).</div>` : "") + `<div class="hint">Click a name for the evidence.</div>`; }
+        (S.rejected.length ? `<div class="hint">${pl(S.rejected.length, "AI reviewer claim")} rejected by code (not counted).</div>` : "") + `<div class="hint">Click a name for the evidence.</div>`; }
     // buttons
     const nx = MODE === "live" ? null : nextSegment(), busy = !!S.busy || playing;
     $("bFind").disabled = busy || (MODE !== "live" && nx !== "find");
@@ -374,8 +407,8 @@ footer{font-size:12.5px;color:var(--muted)}
     const all = S.dots;
     $("counts").innerHTML = `<span><b>${all.length}</b> questions</span><span style="color:var(--ok)"><b>${all.filter(d => d.ev.decision === "allow").length}</b> allowed</span><span style="color:var(--no)"><b>${all.filter(d => d.ev.decision === "block").length}</b> blocked</span>${all.some(d => d.ev.decision === "ask") ? `<span style="color:#b07400"><b>${all.filter(d => d.ev.decision === "ask").length}</b> held for approval</span>` : ""}<span style="color:var(--leak)"><b>${all.filter(d => d.st === "leak").length}</b> part of a violation</span><span style="color:var(--inv)"><b>${S.invCount}</b> conversations reviewed</span>`;
     renderDots(); renderRoster();
-    const l = S.last; $("last").textContent = l ? (l.attacker ? (isExplorer(l.attacker) ? "explorer" : "red team") + " as " : "") + NAME[l.actor] + ": " + l.english + " → " + (l.decision === "allow" ? "allowed" : "blocked") : "";
-    $("invline").textContent = S.inv ? "AI Investigator reviewing: " + (S.inv.attacker ? (isExplorer(S.inv.attacker) ? "an explorer's probing" : "a red-team attack") : "“" + ((S.tasks.find(t => t.id === S.inv.task) || {}).text || "").slice(0, 90) + "”") : "";
+    const l = S.last; $("last").textContent = l ? (l.attacker ? (isExplorer(l.attacker) ? "test agent" : "attack agent") + " as " : "") + NAME[l.actor] + ": " + l.english + " → " + (l.decision === "allow" ? "allowed" : "blocked") : "";
+    $("invline").textContent = S.inv ? "AI reviewer reviewing: " + (S.inv.attacker ? (isExplorer(S.inv.attacker) ? "a test agent's probing" : "an attack") : "“" + ((S.tasks.find(t => t.id === S.inv.task) || {}).text || "").slice(0, 90) + "”") : "";
     renderProposal(); renderWall();
   }
   let dotCount = 0;
@@ -426,7 +459,7 @@ footer{font-size:12.5px;color:var(--muted)}
   function evidenceHTML(L) {
     const qs = (L.queryIdx || []).map(q => S.byQ[q] && S.byQ[q].ev).filter(Boolean), who = NAME[L.learner];
     const task = (S.tasks.find(t => t.id === L.task) || {}).text, ex = (S.explorers || []).find(x => x.id === L.attacker), at = (S.attackers || []).find(x => x.id === L.attacker);
-    const ask = L.attacker ? `<div class="sec"><i>${isExplorer(L.attacker) ? "Explorer agent" : "Red-team agent"} ${esc(String(L.attacker).toUpperCase())}</i>Probing on purpose with exactly the ${who}'s permissions${ex || at ? ": " + esc((ex || at).angle) : "."}</div>` : task ? `<div class="sec"><i>${esc(E.PEOPLE[L.learner].name)} (${esc(E.PEOPLE[L.learner].role)}) asked the ${who}, on their behalf</i>“${esc(task)}”</div>` : "";
+    const ask = L.attacker ? `<div class="sec"><i>${isExplorer(L.attacker) ? "Test agent" : "Attack agent"} ${esc(String(L.attacker).toUpperCase())}</i>Probing on purpose with exactly the ${who}'s permissions${ex || at ? ": " + esc((ex || at).angle) : "."}</div>` : task ? `<div class="sec"><i>${esc(E.PEOPLE[L.learner].name)} (${esc(E.PEOPLE[L.learner].role)}) asked the ${who}, on their behalf</i>“${esc(task)}”</div>` : "";
     const cov = new Set(), vic = new Set(L.victims);
     qs.filter(x => x.tool !== "ask_agent").forEach(x => (x.tool === "update_client" ? [x.args.client] : E.matchSet(x.args)).forEach(id => cov.add(id)));
     const names = esc(L.victimNames.join(" and ")), one = L.victimNames.length === 1;
@@ -436,11 +469,12 @@ footer{font-size:12.5px;color:var(--muted)}
     else if (L.type === "difference") rv = `Two allowed totals differ by ${one ? "one person" : "only " + L.victimNames.length + " people"}: ${names}. The difference is ${one ? "that person's exact balance" : "their combined balance"}.<small>Each question on its own looked harmless.</small>`;
     else rv = (one ? `That “anonymous” figure covered one person the ${who} may not see: ${names}. It is their exact balance.` : `That figure covered only ${names}, people the ${who} may not see.`) + "<small>No rule in the policy was broken.</small>";
     const f = L.finding || {}, checks = f.checks || [];
-    const how = L.found_by === "code" ? `<div class="sec"><i>How it was flagged</i>A code check caught this (${esc(METHOD[L.type] || L.type)}). <b>The AI Investigator missed it</b>, which is why the code checks stay on as a backstop.</div>` :
-      `<div class="sec inv"><i>How it was flagged · AI Investigator, then code</i><b>The Investigator reported</b>${L.method && L.method !== METHOD[L.type] ? ` <span class="hint">(its words for the method: “${esc(L.method)}”)</span>` : ""}<b>:</b> ${esc(f.explanation || "")}${f.expression ? ` <span class="hint">(derivation: ${esc(f.expression)})</span>` : ""}
+    const imp = ` <b>${esc(impact(L))}</b>`;
+    const how = L.found_by === "code" ? `<div class="sec"><i>How it was flagged</i>A code check caught this (${esc(METHOD[L.type] || L.type)}). <b>The AI reviewer missed it</b>, which is why the code checks stay on as a backstop.</div>` :
+      `<div class="sec inv"><i>How it was flagged · AI reviewer, then code</i><b>The AI reviewer reported</b>${L.method && L.method !== METHOD[L.type] ? ` <span class="hint">(its words for the method: “${esc(L.method)}”)</span>` : ""}<b>:</b> ${esc(f.explanation || "")}${f.expression ? ` <span class="hint">(derivation: ${esc(f.expression)})</span>` : ""}
         <ul class="checks">${checks.map(c => `<li class="${c.ok ? "" : "bad"}">${esc(c.label)}</li>`).join("")}</ul>${L.code_agrees ? '<div class="hint" style="margin-top:4px">The backstop code check caught it too.</div>' : ""}</div>`;
-    return `<div class="tags"><span class="mtag">${esc(mlabel(L))}</span><span class="fby ${L.found_by === "code" ? "code" : ""}">${L.found_by === "code" ? "CAUGHT BY CODE CHECK" : "FOUND BY AI INVESTIGATOR · CONFIRMED BY CODE"}</span>${L.ver !== S.policy.version ? `<span class="hint">under policy v${L.ver}</span>` : ""}</div>
-      <h3>${esc(L.story.headline)}</h3><div class="amt">${L.type === "edit" ? "risk rating " + esc((L.change || {}).from) + " → " + esc((L.change || {}).to) : eur(L.revealed)}</div>
+    return `<div class="tags"><span class="mtag">${esc(mlabel(L))}</span><span class="fby ${L.found_by === "code" ? "code" : ""}">${L.found_by === "code" ? "CAUGHT BY CODE CHECK" : "FOUND BY AI REVIEWER · CONFIRMED BY CODE"}</span>${L.ver !== S.policy.version ? `<span class="hint">under policy v${L.ver}</span>` : ""}</div>
+      <h3>${esc(L.story.headline)}</h3><div class="impact">⚠ ${esc(impact(L))}</div><div class="amt">${L.type === "edit" ? "risk rating " + esc((L.change || {}).from) + " → " + esc((L.change || {}).to) : eur(L.revealed)}</div>
       ${ask}<div class="sec"><i>What happened</i>${qs.map(x => qaLine(x, who)).join("")}</div><div class="rv">${rv}</div>${recheckHTML(L)}${how}${roster(L.victimRegion, cov, vic)}`;
   }
   function cellHTML(k) {
@@ -448,7 +482,7 @@ footer{font-size:12.5px;color:var(--muted)}
     const col = COLS.find(x => x[0] === c)[1], goal = lock ? GOAL[ROWS.indexOf(r)] : null;
     let h = `<h3>${NAME[r]} · ${esc(col)}</h3><div class="sec"><i>The policy says</i><b>${esc(ct.v.replace(/^. /, ""))}</b>${ct.q ? " · " + esc(ct.q) : ""}</div>`;
     if (goal) h += `<div class="sec" style="background:var(--leakbg)"><i style="color:var(--leak)">Protection goal · ${esc(lock.toLowerCase())}</i>${esc(goal)}</div>`;
-    if (S.dayDone) h += goal ? `<div class="okmsg">✓ ${pl(all.length, "question")} touched this cell; the AI Investigator reviewed ${pl(S.invCount, "conversation")}. Nothing protected here got through.</div>` : `<div class="sec"><i>Today</i>${pl(all.length, "question")} touched this cell: ${all.filter(d => d.ev.decision === "allow").length} allowed, ${all.filter(d => d.ev.decision !== "allow").length} blocked.</div>`;
+    if (S.dayDone) h += goal ? `<div class="okmsg">✓ ${pl(all.length, "question")} touched this cell; the AI reviewer reviewed ${pl(S.invCount, "conversation")}. Nothing protected here got through.</div>` : `<div class="sec"><i>Today</i>${pl(all.length, "question")} touched this cell: ${all.filter(d => d.ev.decision === "allow").length} allowed, ${all.filter(d => d.ev.decision !== "allow").length} blocked.</div>`;
     if (MODE === "live" && !S.busy) { const opts = cellOptions(r, c);
       h += `<div class="sec"><i>Change the policy</i><div class="opts">${opts.map((o, i) => `<button class="btn sm ${o.on ? "pri" : ""}" data-opt="${k}|${i}">${esc(o.label)}</button>`).join("")}</div><div class="hint" style="margin-top:4px">${c === "relay" ? "Applies to all agents. " : ""}Then press Find violations to test it.</div></div>`; }
     return h;
@@ -537,7 +571,7 @@ footer{font-size:12.5px;color:var(--muted)}
       const groups = changeGroups(from, pol, changes);
       if (groups.length) h += `<div class="bigwrap"><div class="bigh">What the agent changes · ${pl(groups.length, "change")}</div>${changeCardsHTML(groups)}</div>`;
       h += `<details class="callout"${groups.length ? "" : " open"}><summary><b class="t">The exact rules · ${pl(changes.length, "rule")}</b> <span class="hint">(click to expand)</span></summary>${changes.map(c => `<div class="chgrow"><span class="area">${esc(c.area)}</span><span>${esc(c.text)}${c.why ? `<br><span class="hint">Agent's reason: ${esc(c.why)}</span>` : ""}</span><span class="eff">${c.closes != null ? `<span style="color:var(--ok)">closes ${c.closes}</span>${c.breaks ? ` · <span style="color:var(--leak)">breaks ${c.breaks}</span>` : ""}` : ""}</span></div>`).join("")}
-        <div class="hint">${(pol.deny_rules || []).length ? "Written by the Policy agent in the Gate's rule language. Each sentence is generated from the rule the Gate enforces; rules can only refuse, never grant. " : ""}Reading and changing client records stay exactly as they were.${changes.some(c => c.closes != null) ? " “Closes” = violations from the day this change alone would have stopped." : ""}</div></details>`;
+        <div class="hint">${(pol.deny_rules || []).length ? "Written by the Policy agent in the access check's rule language. Each sentence is generated from the rule the access check enforces; rules can only refuse, never grant. " : ""}Reading and changing client records stay exactly as they were.${changes.some(c => c.closes != null) ? " “Closes” = violations from the day this change alone would have stopped." : ""}</div></details>`;
     }
     h += `<div class="drafts">${dr.map(d => d.score ? `<span class="dr ${d.score.leaks_blocked === d.score.leaks_total && !d.score.legit_blocked ? "ok" : "bad"}">Draft ${d.n}: stops ${d.score.leaks_blocked}/${d.score.leaks_total} violations · breaks ${d.score.legit_blocked} everyday ${d.score.legit_blocked === 1 ? "question" : "questions"}</span>` : `<span class="dr bad">Draft ${d.n}: invalid</span>`).join("")}${!P && (S.busy || playing) ? '<span class="dr"><span class="spin"></span>drafting…</span>' : ""}</div>`;
     if (P && pol) {
@@ -557,7 +591,7 @@ footer{font-size:12.5px;color:var(--muted)}
     const box = $("wallcard"), w = S.walls[S.walls.length - 1];
     if (!w) { box.hidden = true; wallKey = null; return; } box.hidden = false;
     if (wallKey !== w) { wallKey = w; wallShown = 0;
-      box.innerHTML = `<h2><span>Red team vs policy v${w.version}${S.walls.length > 1 ? " · round " + S.walls.length : ""}</span><span class="h2n">grey: stopped · hollow green: answered with a safe figure · red: violation</span></h2>
+      box.innerHTML = `<h2><span>Attack agents vs policy v${w.version}${S.walls.length > 1 ? " · round " + S.walls.length : ""}</span><span class="h2n">grey: stopped · hollow green: answered with a safe figure · red: violation</span></h2>
         <div class="wall" id="wall"><div class="w"></div></div><div class="counts" id="wcounts" style="margin-top:8px"></div><div class="lanes">${S.attackers.map(a => `<div><b>${esc(a.id.toUpperCase())} · as the ${NAME[a.as]}</b><span class="hint">${esc(a.angle)}</span></div>`).join("")}</div><div id="wresult"></div>`; }
     const el = $("wall");
     for (; wallShown < w.dots.length; wallShown++) {
@@ -567,44 +601,47 @@ footer{font-size:12.5px;color:var(--muted)}
     [...el.querySelectorAll("span")].forEach((s, i) => { const d = w.dots[i]; if (!d) return; s.className = d.st === "leak" ? "lk" : d.st === "allow" ? "ok" : ""; if (d.st === "leak") s.style.left = "calc(64% + " + (30 + s.dataset.x * 200) + "px)"; });
     const nb = w.dots.filter(d => d.st === "block").length, nl = w.dots.filter(d => d.st === "leak").length;
     $("wcounts").innerHTML = `<span><b>${w.dots.length}</b> attempts</span><span style="color:var(--no)"><b>${nb}</b> stopped</span><span style="color:var(--ok)"><b>${w.dots.length - nb - nl}</b> safe answers</span><span style="color:var(--leak)"><b>${nl}</b> part of a violation</span>`;
-    $("wresult").innerHTML = w.end ? (w.end.leaks ? `<div class="rv" style="margin-top:8px">${pl(w.end.leaks, "violation")} got through. Click it in the violations list, then fix the policy again.</div>` : `<div style="margin-top:8px;color:var(--ok);font-weight:600">✓ The policy held: ${w.end.attempts} attempts, every conversation reviewed by the AI Investigator, no violations.</div>`) : "";
+    $("wresult").innerHTML = w.end ? (w.end.leaks ? `<div class="rv" style="margin-top:8px">${pl(w.end.leaks, "violation")} got through. Click it in the violations list, then fix the policy again.</div>` : `<div style="margin-top:8px;color:var(--ok);font-weight:600">✓ The policy held: ${w.end.attempts} attempts, every conversation reviewed by the AI reviewer, no violations.</div>`) : "";
   }
 
   // ---------------- the setup card: diagram + protection goal
   function renderSetup() {
     const col = { cn: "#8a3ffc", eu: "#1f6feb", gl: "#0f7b72" }, T = (x, y, s, o) => `<text x="${x}" y="${y}" ${o || ""} font-family="IBM Plex Sans,sans-serif">${s}</text>`;
-    $("er").innerHTML = `<svg viewBox="0 0 560 250" role="img" aria-label="Agents ask the clients table through the Gate; the AI Investigator reviews every conversation and code confirms its findings">
+    $("er").innerHTML = `<svg viewBox="0 0 560 250" role="img" aria-label="Agents ask the clients table through the access check; the AI reviewer reviews every conversation and code confirms its findings">
       <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#9aa2b1"/></marker><marker id="ai" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#7a3db8"/></marker></defs>
       ${ROWS.map((a, i) => `<g data-agent="${a}" class="svgag" tabindex="0" role="button" aria-label="${NAME[a]}: open agent details"><rect x="4" y="${8 + i * 50}" width="124" height="38" rx="8" fill="#fff" stroke="${col[a]}" stroke-width="2"/>` + T(66, 32 + i * 50, NAME[a], 'text-anchor="middle" font-size="13" font-weight="600" fill="#151a24"') + "</g>").join("")}
       <path d="M128 27 L196 72 M128 77 L196 77 M128 127 L196 82" stroke="#9aa2b1" stroke-width="1.6" fill="none"/>
-      <rect x="196" y="48" width="108" height="58" rx="8" fill="#151a24"/>${T(250, 73, "Gate", 'text-anchor="middle" font-size="13" font-weight="600" fill="#fff"')}${T(250, 91, "checks the policy", 'text-anchor="middle" font-size="10.5" fill="#c9cfd9"')}
+      <rect x="196" y="48" width="108" height="58" rx="8" fill="#151a24"/>${T(250, 73, "Access check", 'text-anchor="middle" font-size="13" font-weight="600" fill="#fff"')}${T(250, 91, "checks the policy", 'text-anchor="middle" font-size="10.5" fill="#c9cfd9"')}
       <path d="M304 77 L344 77" stroke="#9aa2b1" stroke-width="1.6" marker-end="url(#ar)"/>
       <rect x="348" y="6" width="208" height="140" rx="8" fill="#fff" stroke="#151a24" stroke-width="1.6"/><path d="M348 30 L348 14 Q348 6 356 6 L548 6 Q556 6 556 14 L556 30 Z" fill="#151a24"/>${T(452, 23, "clients · 30 rows", 'text-anchor="middle" font-size="12.5" font-weight="600" fill="#fff"')}
       ${["id, name", "region  CN | EU", "city", "segment  retail | private", "balance_eur", "risk_rating  low | med | high"].map((f, i) => `<text x="360" y="${48 + i * 16}" font-size="11.5" font-family="IBM Plex Mono,monospace" fill="#151a24">${f}</text>`).join("")}
-      <g data-agent="investigator" class="svgag" tabindex="0" role="button" aria-label="AI Investigator: open agent details"><rect x="4" y="176" width="300" height="66" rx="10" fill="#f4ecfb" stroke="#7a3db8" stroke-width="1.8"/>${T(154, 200, "AI Investigator", 'text-anchor="middle" font-size="13.5" font-weight="700" fill="#7a3db8"')}${T(154, 220, "reviews every conversation against the goal", 'text-anchor="middle" font-size="11" fill="#5d3a86"')}</g>
+      <g data-agent="investigator" class="svgag" tabindex="0" role="button" aria-label="AI reviewer: open agent details"><rect x="4" y="176" width="300" height="66" rx="10" fill="#f4ecfb" stroke="#7a3db8" stroke-width="1.8"/>${T(154, 200, "AI reviewer", 'text-anchor="middle" font-size="13.5" font-weight="700" fill="#7a3db8"')}${T(154, 220, "reviews every conversation against the goal", 'text-anchor="middle" font-size="11" fill="#5d3a86"')}</g>
       <path d="M154 108 L154 172" stroke="#7a3db8" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#ai)"/>${T(160, 150, "every question, answer, message", 'font-size="10.5" fill="#7a3db8"')}
       <path d="M304 209 L344 209" stroke="#7a3db8" stroke-width="1.6" marker-end="url(#ai)"/>
       <rect x="348" y="176" width="208" height="66" rx="10" fill="#151a24"/>${T(452, 200, "Code confirms", 'text-anchor="middle" font-size="13.5" font-weight="700" fill="#fff"')}${T(452, 220, "each finding against the real data", 'text-anchor="middle" font-size="11" fill="#c9cfd9"')}
-    </svg><div class="hint">Four ways in: <b>read records</b>, <b>change a record</b>, <b>counts &amp; totals</b>, <b>ask another agent</b>. The Gate checks each one against the policy.</div>`;
+    </svg><div class="hint">Four ways in: <b>read records</b>, <b>change a record</b>, <b>reports &amp; totals</b>, <b>ask another agent</b>. The access check tests each one against the policy.</div>`;
     $("goal").innerHTML = `<b class="t">The protection goal · must never happen, whatever the policy says</b><ul>${GOAL.map(g => `<li>${esc(g)}</li>`).join("")}</ul>`;
   }
 
   // ---------------- the agents: a roster in the setup card, and a full card per agent
   const ACOL = { cn: "#8a3ffc", eu: "#1f6feb", gl: "#0f7b72", investigator: "#7a3db8", policy: "#b4690e", explorer: "#5b6475", redteam: "#c0392b" };
-  const KIND = { worker: "Worker agent", investigator: "Reviewer agent", policy: "Policy agent", explorer: "Explorer agent", redteam: "Red-team agent" };
+  const KIND = { worker: "Worker agent", investigator: "Reviewer agent", policy: "Policy agent", explorer: "Test agent", redteam: "Attack agent" };
   const INIT = { cn: "CN", eu: "EU", gl: "GA", investigator: "AI", policy: "PA" };
   function fallbackCard(id) {
     if (NAME[id]) return { id, kind: "worker", name: NAME[id], goal: BASE[id] };
-    if (id === "investigator") return { id, kind: "investigator", name: "AI Investigator", goal: "Reviews every conversation against the protection goal; code confirms each finding." };
+    if (id === "investigator") return { id, kind: "investigator", name: "AI reviewer", goal: "Reviews every conversation against the protection goal; code confirms each finding." };
     if (id === "policy") return { id, kind: "policy", name: "Policy agent", goal: "Rewrites the policy; code tests every draft; a person approves." };
     const ex = (S.explorers || []).find(x => x.id === id), at = (S.attackers || []).find(x => x.id === id);
-    if (ex) return { id, kind: "explorer", name: "Explorer " + id.slice(2), acts_as: ex.as, goal: ex.angle };
-    if (at) return { id, kind: "redteam", name: "Red team " + id.slice(2), acts_as: at.as, goal: at.angle };
+    if (ex) return { id, kind: "explorer", name: "Test agent " + id.slice(2), acts_as: ex.as, goal: ex.angle };
+    if (at) return { id, kind: "redteam", name: "Attack agent " + id.slice(2), acts_as: at.as, goal: at.angle };
     return { id, kind: "worker", name: id, goal: "" };
   }
-  const card = id => (S.cards || {})[id] || fallbackCard(id);
+  const PLAIN = { investigator: "AI reviewer" };
+  const card = id => { const c = (S.cards || {})[id] || fallbackCard(id);
+    const name = PLAIN[id] || (c.kind === "explorer" ? "Test agent " + id.slice(2) : c.kind === "redteam" ? "Attack agent " + id.slice(2) : c.name);
+    return Object.assign({}, c, { name }); };
   const acol = c => ACOL[c.id] || ACOL[c.kind];
-  const ainit = c => INIT[c.id] || (c.kind === "explorer" ? "X" : "R") + c.id.slice(2);
+  const ainit = c => INIT[c.id] || (c.kind === "explorer" ? "T" : "A") + c.id.slice(2);
   const actsOf = (id, d) => { const c = card(id); return c.kind === "explorer" || c.kind === "redteam" ? d.ev.attacker === id : d.ev.actor === id && !d.ev.attacker; };
   const allDotsNow = () => S.dots.concat(...S.walls.map(w => w.dots));
   function agentStat(id) {
@@ -621,7 +658,7 @@ footer{font-size:12.5px;color:var(--muted)}
     $("roster").innerHTML = `<b class="t">The agents · click one for its goal, system prompt, tools and access</b><div class="rgroups">
       <div class="rg"><i>Do the bank's work</i><div class="rcards">${ROWS.map(one).join("")}</div></div>
       <div class="rg"><i>Check and fix</i><div class="rcards">${one("investigator")}${one("policy")}</div></div>
-      <div class="rg"><i>Probe on purpose</i><div class="rmini">${ex.map(one).join("")}${rt.map(one).join("")}</div></div></div>`;
+      <div class="rg"><i>Test it on purpose</i><div class="rmini">${ex.map(one).join("")}${rt.map(one).join("")}</div></div></div>`;
   }
   function agentHTML(id) {
     const c = card(id), r = c.kind === "worker" ? id : c.acts_as, p = S.policy, sec = (t, h, st) => `<div class="sec"${st ? ` style="${st}"` : ""}><i>${t}</i>${h}</div>`;
@@ -631,7 +668,7 @@ footer{font-size:12.5px;color:var(--muted)}
     if (reg) h += sec("Registry entry · like an employee record", `<div class="acc">${[["Acts for", reg.serves], ["Accountable owner", reg.owner], ["Version", reg.version], ["Risk tier", reg.risk], ["Approval rules", reg.approvals], ["Next review", reg.review]].map(([k, v]) => `<div><span>${k}</span><span class="yes" style="color:#151a24;font-weight:500;text-align:right">${esc(v)}</span></div>`).join("")}</div>`);
     // access and protection goal
     let acc;
-    if (r) acc = `<div class="acc">${COLS.map(([k, l]) => { const ct = cellText(p, r, k), lk = lockLabel(r, k); return `<div><span>${esc(l)}${lk ? ` <span class="lk">${lk}</span>` : ""}${ct.q ? `<br><span class="hint">${esc(ct.q)}</span>` : ""}</span><span class="${ct.st === "yes" ? "yes" : "no"}">${esc(ct.v)}</span></div>`; }).join("")}</div><div class="hint" style="margin-top:4px">Policy v${p.version}. The Gate (plain code) checks every call against this; the agent cannot get around it.</div>`;
+    if (r) acc = `<div class="acc">${COLS.map(([k, l]) => { const ct = cellText(p, r, k), lk = lockLabel(r, k); return `<div><span>${esc(l)}${lk ? ` <span class="lk">${lk}</span>` : ""}${ct.q ? `<br><span class="hint">${esc(ct.q)}</span>` : ""}</span><span class="${ct.st === "yes" ? "yes" : "no"}">${esc(ct.v)}</span></div>`; }).join("")}</div><div class="hint" style="margin-top:4px">Policy v${p.version}. The access check (plain code) tests every request against this; the agent cannot get around it.</div>`;
     else if (c.kind === "investigator") acc = `<div class="acc"><div><span>Client data tools</span><span class="no">✗ none</span></div><div><span>Change anything</span><span class="no">✗ never</span></div><div><span>Reads</span><span class="yes">every conversation, after it ends</span></div><div><span>Its findings count only if</span><span class="yes">code confirms them</span></div></div>`;
     else acc = `<div class="acc"><div><span>Client data tools</span><span class="no">✗ none</span></div><div><span>Widen anyone's record rights</span><span class="no">✗ code rejects it</span></div><div><span>Can</span><span class="yes">propose a policy</span></div><div><span>Takes effect only when</span><span class="yes">a person approves</span></div></div>`;
     const goal = r ? GOAL[ROWS.indexOf(r)] : c.kind === "investigator" ? "Checks every conversation against all three lines of the protection goal." : "Its policy must stop every confirmed violation and keep every everyday question working.";
@@ -677,7 +714,7 @@ footer{font-size:12.5px;color:var(--muted)}
   function startLive(st) {
     MODE = "live"; $("mode").className = "mode live"; $("mode").textContent = "LIVE · " + st.model;
     S.policy = withRules(st.policy); S.busy = st.busy; if (st.calls) $("cost").textContent = st.calls + " model calls · ₹" + st.cost_inr;
-    $("foot").innerHTML = "Live. Every agent, including the Investigator and the Policy agent, is an AI model (" + esc(st.model) + "). Every allow/block is decided by plain code; every violation is found by the AI Investigator and confirmed by code against the real data. A person approves every policy change. Synthetic data, fictional clients.";
+    $("foot").innerHTML = "Live. Every agent, including the AI reviewer and the Policy agent, is an AI model (" + esc(st.model) + "). Every allow/block is decided by plain code; every violation is found by the AI reviewer and confirmed by code against the real data. A person approves every policy change. Synthetic data, fictional clients.";
     const es = new EventSource("/api/events");
     // on every (re)connect the server resends its whole history: start from a clean page, then ask whether a job is really running
     es.onopen = () => { QUEUE.length = 0; S = fresh(withRules(E.policyV1())); draftPolicy = null;
@@ -730,7 +767,7 @@ footer{font-size:12.5px;color:var(--muted)}
   function startGuide() {
     G.on = true; G.seen = new Set(); G.day = 0; draftPolicy = null; document.body.classList.add("guiding"); $("gexit").textContent = "Exit guide";
     const begin = () => narrate("<b>A bank gives three AI agents sensible rules.</b> China client data stays with the China agent, EU data with the EU agent; totals count as anonymous. On paper, the matrix looks airtight.", { spot: ["polcard"], pause: true,
-      next: () => narrate("<b>What must never happen</b> is written down separately, as the protection goal. After every conversation an <b>AI Investigator</b> checks against it, and <b>code confirms</b> each finding against the real data.", { spot: ["dbcard"], pause: true, label: "▶ Start the day", next: () => act("find") }) });
+      next: () => narrate("<b>What must never happen</b> is written down separately, as the protection goal. After every conversation an <b>AI reviewer</b> checks against it, and <b>code confirms</b> each finding against the real data.", { spot: ["dbcard"], pause: true, label: "▶ Start the day", next: () => act("find") }) });
     if (MODE === "live") api("/api/reset").then(() => setTimeout(begin, 300)); else { startReplay(RUN); G.on = true; begin(); }
   }
   function guideEnd(text) {
@@ -739,22 +776,23 @@ footer{font-size:12.5px;color:var(--muted)}
   }
   function storyLine(L) {
     const who = NAME[L.learner], name = esc(L.victimNames.join(" and ")), task = (S.tasks.find(t => t.id === L.task) || {}).text;
-    const lead = L.attacker ? `An explorer agent with the ${who}'s permissions went looking. ` : task ? `${esc(E.PEOPLE[L.learner].name)}, ${esc(E.PEOPLE[L.learner].role)}, asked the ${who}: <i>“${esc(task.length > 100 ? task.slice(0, 98) + "…" : task)}”</i> ` : "";
-    const how = L.found_by === "code" ? " <i>(Caught by a code check; the Investigator missed it.)</i>" : " The Investigator flagged it; code confirmed it.";
-    if (L.type === "single_out") return lead + (mlabel(L) === "Narrowing with filters" ? "It <b>narrowed the filters</b> (balance ranges, excluded cities) until " : "") + `${mlabel(L) === "Narrowing with filters" ? "an" : "An"} allowed figure covered ${L.victimNames.length === 1 ? "one person" : "only " + L.victimNames.length + " people"}: <b>${name}</b>. The ${who} now knows ${eur(L.revealed)}.` + how;
-    if (L.type === "difference") return lead + `Two allowed totals differ by one person, <b>${name}</b>: subtract them and the ${who} has ${eur(L.revealed)}.` + how;
-    if (L.type === "relay") return lead + `It may never read those records, so it <b>asked another agent</b>, which simply answered: <b>${name}</b>'s details.` + how;
-    if (L.type === "edit") return lead + `It may never change EU records, so it <b>asked the ${NAME[L.via] || "EU agent"}</b>, which did it: <b>${name}</b>'s risk rating went ${esc((L.change || {}).from)} → ${esc((L.change || {}).to)}.` + how;
-    return lead + esc(L.story.headline) + "." + how;
+    const lead = L.attacker ? `A test agent with the ${who}'s permissions went looking on purpose. ` : task ? `${esc(E.PEOPLE[L.learner].name)}, ${esc(E.PEOPLE[L.learner].role)}, asked the ${who}: <i>“${esc(task.length > 100 ? task.slice(0, 98) + "…" : task)}”</i> ` : "";
+    const imp = ` <b>${esc(impact(L))}</b>`;
+    const how = L.found_by === "code" ? " <i>(Caught by a code check; the AI reviewer missed it.)</i>" : " The AI reviewer flagged it; code confirmed it.";
+    if (L.type === "single_out") return lead + (mlabel(L) === "Narrowing with filters" ? "It <b>narrowed the filters</b> (balance ranges, excluded cities) until " : "") + `${mlabel(L) === "Narrowing with filters" ? "an" : "An"} allowed figure covered ${L.victimNames.length === 1 ? "one person" : "only " + L.victimNames.length + " people"}: <b>${name}</b>. The ${who} now knows ${eur(L.revealed)}.` + imp + how;
+    if (L.type === "difference") return lead + `Two allowed totals differ by one person, <b>${name}</b>: subtract them and the ${who} has ${eur(L.revealed)}.` + imp + how;
+    if (L.type === "relay") return lead + `It may never read those records, so it <b>asked another agent</b>, which simply answered: <b>${name}</b>'s details.` + imp + how;
+    if (L.type === "edit") return lead + `It may never change EU records, so it <b>asked the ${NAME[L.via] || "EU agent"}</b>, which did it: <b>${name}</b>'s risk rating went ${esc((L.change || {}).from)} → ${esc((L.change || {}).to)}.` + imp + how;
+    return lead + esc(L.story.headline) + "." + imp + how;
   }
   function guideHook(ev) {
     switch (ev.kind) {
       case "chapter": if (ev.n === 1) { G.day++; narrate(G.day === 1 ? `<b>A normal day.</b> The agents handle ${S.tasks.length} everyday requests from bankers and the board. Each square is one question an agent asked the system.` : "<b>Same day, new rules.</b> The agents redo exactly the same requests under the approved policy.", { spot: ["actcard", "polcard"] }); } break;
-      case "investigate": if (G.day === 1 && S.invCount === 1) narrate("After each conversation, the <b>AI Investigator</b> reviews it against the protection goal.", { spot: ["actcard"] }); break;
+      case "investigate": if (G.day === 1 && S.invCount === 1) narrate("After each conversation, the <b>AI reviewer</b> reviews it against the protection goal.", { spot: ["actcard"] }); break;
       case "leak": {
         if (G.day > 1 || ev.phase === "ch2") return; const L = S.leaks[S.leaks.length - 1], key = mlabel(L); if (G.seen.has(key)) return; G.seen.add(key);
         narrate(`<span class="gtag">Violation · ${esc(mlabel(L))}</span> ${storyLine(L)}`, { spot: ["polcard"], pause: true, tone: "red", modal: evidenceHTML(L) }); break; }
-      case "explore": if (G.day === 1) narrate(`Then <b>${(ev.explorers || [1]).length} explorer agents</b> with the China agent's exact permissions go looking on purpose, each from a different angle.`, { spot: ["actcard"] }); break;
+      case "explore": if (G.day === 1) narrate(`Then <b>${(ev.explorers || [1]).length} test agents</b> with the China agent's exact permissions go looking on purpose, each from a different angle.`, { spot: ["actcard"] }); break;
       case "chapter_end": {
         const ppl = new Set(S.leaks.flatMap(L => L.victims)).size, methods = new Set(S.leaks.map(mlabel)).size;
         if (G.day === 1) narrate(ev.leaks ? `<b>End of the day:</b> ${ev.queries} questions, <b>${pl(S.leaks.filter(L => L.ver === S.policy.version).length, "violation")}</b> found by ${pl(methods, "different method")}, ${pl(ppl, "client")} affected. Every one was allowed by the rules as written.` : `<b>End of the day:</b> ${ev.queries} questions, no violations under these rules.`, { spot: ["polcard"], pause: true, tone: ev.leaks ? "red" : "", label: ev.leaks ? "Let the agents fix it ›" : "Continue ›", next: ev.leaks ? () => act("fix") : () => guideEnd() });
@@ -769,15 +807,17 @@ footer{font-size:12.5px;color:var(--muted)}
         else if (ev.decision !== "approve") narrate("Rejected. The Policy agent reads your reason and drafts again.", { spot: ["propcard"] });
         break;
       case "policy": { const m = recheckMap(), old = S.leaks.filter(L => L.ver < ev.version), stop = old.filter(L => (L.queryIdx || []).some(q => m[q] && m[q].decision !== "allow")).length;
-        narrate(`<b>Policy v${ev.version} is in force.</b> The changed cells are outlined. The same ${pl(old.length, "violation")} re-run through the Gate: <b>${stop} now blocked</b>${stop ? " (click any violation to see its question refused)" : ""}. Now let's attack it.`, { spot: ["polcard"], pause: true, label: "▶ Attack it", next: () => act("attack") }); break; }
-      case "wall": narrate("<b>Three red-team agents try every angle:</b> tiny groups, subtracting totals, getting another agent to do it. The Investigator reviews every attack.", { spot: ["wallcard"] }); break;
+        narrate(`<b>Policy v${ev.version} is in force.</b> The changed cells are outlined. The same ${pl(old.length, "violation")} re-run through the access check: <b>${stop} now blocked</b>${stop ? " (click any violation to see its question refused)" : ""}. Now let's attack it.`, { spot: ["polcard"], pause: true, label: "▶ Attack it", next: () => act("attack") }); break; }
+      case "wall": narrate("<b>Three attack agents try every angle:</b> tiny groups, subtracting totals, getting another agent to do it. The AI reviewer checks every attack.", { spot: ["wallcard"] }); break;
       case "wall_end": narrate(ev.leaks ? `<b>${ev.attempts} attempts; ${pl(ev.leaks, "violation")} got through.</b> The agents will have to fix it again.` : `<b>${ev.attempts} attempts. Every one hit the wall.</b>`, { spot: ["wallcard"], pause: true, tone: ev.leaks ? "red" : "green",
         label: MODE === "live" ? "▶ Run the same day again" : "Continue ›", next: () => { if (MODE === "live") act("find"); else { const nx = nextSegment(); if (nx && nx !== "done") act(nx); else finalReplay(); } } }); break;
     }
   }
   function proposalLine(P) {
     const s = P.score || {}, ch = P.changes || (P.policy ? E.policyChanges(withRules(P.from || S.prevPolicy || E.policyV1()), withRules(P.policy)) : []);
-    return `<b>The agent's fix, in ${pl(ch.length, "change")}:</b> ${ch.map(c => esc(c.text.replace(/\.$/, "")) + (c.closes != null ? ` <i>(closes ${c.closes})</i>` : "")).join("; ")}. Re-tested on the whole day: <b>${s.leaks_blocked}/${s.leaks_total} violations stopped</b>, <b>${s.legit_total - s.legit_blocked}/${s.legit_total} everyday questions</b> still work.`;
+    const groups = P.policy && (P.policy.deny_rules || []).length ? changeGroups(withRules(P.from || S.prevPolicy || E.policyV1()), withRules(P.policy), ch) : [];
+    const parts = groups.length ? groups.map(g => esc(g.title) + (g.known ? ` <i>(stops ${g.closes})</i>` : "")) : ch.map(c => esc(c.text.replace(/\.$/, "")) + (c.closes != null ? ` <i>(closes ${c.closes})</i>` : ""));
+    return `<b>The agent's fix, in ${pl(parts.length, "change")}:</b> ${parts.join("; ")}. Re-tested on the whole day: <b>${s.leaks_blocked}/${s.leaks_total} violations stopped</b>, <b>${s.legit_total - s.legit_blocked}/${s.legit_total} everyday questions</b> still work.`;
   }
   function finalReplay() {
     const done = RUN.events.find(e => e.kind === "done"), s = (done && done.summary) || RUN.summary, broke = s && s.routine_still_working < s.routine_total;
