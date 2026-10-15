@@ -95,10 +95,11 @@ async function chat(msgs, opts) {
   if (opts.tool_choice) { // Policy agent
     draft++;
     const first = !msgs.some(m => m.role === "tool");
-    const p = first ? { china_agent_counts: "all", eu_agent_counts: "all", analyst_counts: "all", min_group: 3, overlap_guard: false, asking_other_agents: "blocked",
-        rules: ["Each relationship agent reads only its own region's client records.", "Counts and totals must cover at least 3 clients the agent cannot see; smaller groups are withheld.", "Agents may not ask each other for client data.", "The Global Analyst works only from counts and totals."], rationale: "Close small-group figures and the relay route." }
-      : { china_agent_counts: "all", eu_agent_counts: "all", analyst_counts: "all", min_group: 3, overlap_guard: true, asking_other_agents: "on_behalf",
-        rules: ["Each relationship agent reads only its own region's client records.", "Counts and totals must cover at least 3 clients the agent cannot see; smaller groups are withheld.", "No two answers may differ by fewer than 3 such clients (no subtracting totals).", "An agent may ask another for help, but the helper only uses rights both agents have.", "The Global Analyst works only from counts and totals."], rationale: "Keeps relays for legitimate work; stops differences." };
+    const R1 = { agents: ["any"], action: "counts_totals", data: "not_readable_by_asker", protected_group_below: 3, why: "No figure may pin down one or two people the agent may not see." };
+    const p = first ? { rules: [R1, { agents: ["any"], action: "ask_agent", why: "Stop agents passing data to each other." }], rationale: "Close small groups and the relay route." }
+      : { rules: [R1, { agents: ["any"], action: "counts_totals", data: "not_readable_by_asker", differs_below: 3, why: "No subtracting two near-identical totals." },
+          { agents: ["any"], action: "read_records", acting: "for_another_agent", data: "not_readable_by_asker", why: "A helper may not read records for an agent that may not read them." },
+          { agents: ["any"], action: "change_record", acting: "for_another_agent", data: "not_readable_by_asker", why: "A helper may not change records for an agent that may not change them." }], rationale: "Keeps legitimate help; stops differences and relays." };
     return { role: "assistant", content: null, tool_calls: [{ id: "p" + draft, type: "function", function: { name: "propose_policy", arguments: JSON.stringify(p) } }] };
   }
   let plan, fin;

@@ -22,14 +22,15 @@ function makeChat(log = () => {}) {
     if (exp && exp < new Date()) throw new Error(EXPIRED);
     for (let i = 0; i < 4; i++) {
       try {
-        const r = await fetch(BASE + "/openai/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + TOKEN + ":policy-leaks" }, body: JSON.stringify(body) });
+        // a call that hangs is cut off after 90 s and retried, so one stuck request can never freeze the whole run
+        const r = await fetch(BASE + "/openai/v1/chat/completions", { signal: AbortSignal.timeout(90000), method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + TOKEN + ":policy-leaks" }, body: JSON.stringify(body) });
         if ((r.status === 400 || r.status === 404) && model !== MODEL) { log("  model " + model + " unavailable, using " + MODEL); return chat(messages, Object.assign({}, opts, { model: MODEL })); }
         if (r.status === 401) throw Object.assign(new Error(EXPIRED.replace("has expired", "was refused (expired or wrong)")), { fatal: true });
         if (!r.ok) throw new Error("HTTP " + r.status + " " + redact((await r.text()).slice(0, 160)));
         const out = await r.json(), u = out.usage || {};
         stats.calls++; const big = !/mini|nano/.test(model); stats.cost += ((u.prompt_tokens || 0) * (big ? 2 : 0.4) + (u.completion_tokens || 0) * (big ? 8 : 1.6)) / 1e6;
         return out.choices[0].message;
-      } catch (e) { if (e.fatal) throw e; log("  LLM retry " + (i + 1) + "/4: " + redact(e.message)); await new Promise(r => setTimeout(r, 3000 * (i + 1))); }
+      } catch (e) { if (e.fatal) throw e; log("  LLM retry " + (i + 1) + "/4: " + (e.name === "TimeoutError" ? "no answer from the model after 90 s" : redact(e.message))); await new Promise(r => setTimeout(r, 3000 * (i + 1))); }
     }
     throw new Error("LLM unreachable");
   }

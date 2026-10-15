@@ -102,4 +102,25 @@ ok("policy in plain words: one line per agent, then counts, then safeguards", ()
   assert.equal(r[2], "The Global Analyst reads and changes no client records.");
   assert(r.some(x => /helper uses only the rights both/.test(x)));
 });
+const withRules = rs => Object.assign(E.policyV1(), { version: 2, deny_rules: rs.map(E.normaliseRule) });
+ok("rules: a small-group rule refuses the Frankfurt average but keeps the EU average", () => {
+  const g = E.makeGate(withRules([{ action: "counts_totals", data: "not_readable_by_asker", protected_group_below: 3 }]));
+  const d = g.decide(["cn"], "client_stats", { metric: "average_balance", city: "Frankfurt", segment: "private" });
+  assert.equal(d.decision, "block"); assert.equal(d.rule, "R1");
+  assert.equal(g.decide(["cn"], "client_stats", { metric: "average_balance", region: "EU" }).decision, "allow");
+});
+ok("rules: a helper rule refuses reading EU records for the China agent, not for the EU agent itself", () => {
+  const g = E.makeGate(withRules([{ action: "read_records", acting: "for_another_agent", data: "not_readable_by_asker" }]));
+  assert.equal(g.decide(["cn", "eu"], "read_clients", { region: "EU", city: "Milan" }).decision, "block");
+  assert.equal(g.decide(["eu"], "read_clients", { region: "EU", city: "Milan" }).decision, "allow");
+});
+ok("rules: a differs rule refuses the second of two totals one person apart", () => {
+  const g = E.makeGate(withRules([{ action: "counts_totals", data: "not_readable_by_asker", differs_below: 3 }]));
+  const d1 = g.decide(["cn"], "client_stats", { metric: "total_balance", region: "EU" }); g.remember(["cn"], "client_stats", d1);
+  assert.equal(g.decide(["cn"], "client_stats", { metric: "total_balance", region: "EU", min_balance: 90000 }).decision, "block");
+});
+ok("rules: invalid rules are rejected, and the sentence comes from the rule", () => {
+  assert(E.validateRule(E.normaliseRule({ action: "read_records", protected_group_below: 3 }, 0)).length);
+  assert.equal(E.describeRule(E.normaliseRule({ agents: ["gl"], action: "ask_agent" }, 0)), "The Global Analyst may not ask another agent for help.");
+});
 console.log(n + " tests passed");

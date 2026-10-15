@@ -100,7 +100,84 @@ function validatePolicy(p, base) {
   if (typeof p.overlap_guard !== "boolean") errs.push("overlap_guard must be true/false");
   if (!POLICY_SCHEMA.relay.includes(p.relay)) errs.push("relay must be one of " + POLICY_SCHEMA.relay.join("/"));
   if (!Array.isArray(p.rules) || !p.rules.length) errs.push("rules: give the plain-English policy as a list");
+  (p.deny_rules || []).forEach(r => validateRule(r).forEach(e => errs.push(e)));
+  const seen = {}; (p.deny_rules || []).forEach(r => { const k = describeRule(r); if (seen[k]) errs.push("rule " + r.id + " repeats rule " + seen[k]); else seen[k] = r.id; });
+  if ((p.deny_rules || []).length > 8) errs.push("too many rules (" + p.deny_rules.length + "); keep it to 8 or fewer: use 'any' when the same rule applies to every agent");
   return errs;
+}
+
+
+// ---------------------------------------------------------------- the rule language the Policy agent writes in
+// Every rule REFUSES something (deny-only), so an AI-written rule can take access away but never grant it.
+// A rule applies to a call when every condition it names holds; the first matching rule refuses the call.
+const RULE_SCHEMA = {
+  action: ["read_records", "change_record", "counts_totals", "ask_agent"],
+  data: ["any", "not_readable_by_asker", "readable_by_asker"],
+  acting: ["any", "alone", "for_another_agent"],
+  metrics: ["count", "total_balance", "average_balance"],
+  filters: ["region", "city", "segment", "min_balance", "max_balance", "exclude_city"],
+  agents: ["cn", "eu", "gl", "any"],
+};
+function normaliseRule(r, i) {
+  const list = (x, ok) => (Array.isArray(x) ? x : x == null || x === "" ? [] : [x]).map(String).filter(v => ok.includes(v));
+  const num = x => (x == null || x === "" || +x === 0 ? null : Math.round(+x));
+  return { id: "R" + (i + 1), agents: list(r.agents, RULE_SCHEMA.agents).length ? list(r.agents, RULE_SCHEMA.agents) : ["any"], action: r.action, data: r.data || "any", acting: r.acting || "any",
+    asked_by: list(r.asked_by, ["cn", "eu", "gl"]), to_agents: list(r.to_agents, ["cn", "eu", "gl"]), metrics: list(r.metrics, RULE_SCHEMA.metrics), filters: list(r.filters, RULE_SCHEMA.filters),
+    protected_group_below: num(r.protected_group_below), differs_below: num(r.differs_below), why: String(r.why || r.text || "").slice(0, 200) };
+}
+function validateRule(r) {
+  const e = [], at = "rule " + r.id + ": ";
+  if (!RULE_SCHEMA.action.includes(r.action)) e.push(at + "action must be one of " + RULE_SCHEMA.action.join("/"));
+  if (!RULE_SCHEMA.data.includes(r.data)) e.push(at + "data must be one of " + RULE_SCHEMA.data.join("/"));
+  if (!RULE_SCHEMA.acting.includes(r.acting)) e.push(at + "acting must be one of " + RULE_SCHEMA.acting.join("/"));
+  for (const k of ["protected_group_below", "differs_below"]) if (r[k] != null && !(r[k] >= 2 && r[k] <= 20)) e.push(at + k + " must be between 2 and 20");
+  if (r.action !== "counts_totals" && (r.metrics.length || r.filters.length || r.protected_group_below || r.differs_below)) e.push(at + "metrics, filters, protected_group_below and differs_below only apply to counts_totals");
+  if (r.action !== "ask_agent" && r.to_agents.length) e.push(at + "to_agents only applies to ask_agent");
+  if (r.asked_by.length && r.acting === "alone") e.push(at + "asked_by needs acting = for_another_agent");
+  if (r.acting === "for_another_agent" && r.asked_by.length && !r.agents.includes("any") && r.agents.every(a => r.asked_by.includes(a)) && r.asked_by.every(a => r.agents.includes(a))) e.push(at + "an agent never acts for itself, so this rule can never apply");
+  if (r.action === "ask_agent" && r.to_agents.length && !r.agents.includes("any") && r.agents.every(a => r.to_agents.includes(a)) && r.to_agents.length === 1) e.push(at + "an agent cannot ask itself, so this rule can never apply");
+  return e;
+}
+const RN = { cn: "the China agent", eu: "the EU agent", gl: "the Global Analyst" }, RM = { count: "counts", total_balance: "totals", average_balance: "averages" };
+const RF = { min_balance: "a minimum balance", max_balance: "a maximum balance", exclude_city: "an excluded city", city: "a city", segment: "a segment", region: "a region" };
+const orList = xs => xs.length <= 1 ? xs.join("") : xs.slice(0, -1).join(", ") + " or " + xs[xs.length - 1];
+// the sentence shown to people is generated from the rule itself, so it always says exactly what the Gate enforces
+function describeRule(r) {
+  const named = r.agents.includes("any") ? null : orList(r.agents.map(a => RN[a]));
+  let lead = named ? named.replace(/^t/, "T") + " may not" : "No agent may";
+  const helper = r.acting === "for_another_agent" ? "When acting for " + (r.asked_by.length ? orList(r.asked_by.map(a => RN[a])) : "another agent") + ", " : r.acting === "alone" ? "On its own behalf, " : "";
+  if (helper) lead = lead.replace(/^T/, "t").replace(/^No/, "no");
+  // the condition is always about the agent that started the request (itself, or the agent it is helping)
+  const whose = r.acting === "for_another_agent" ? "the asking agent" : r.acting === "alone" ? "it" : "the requesting agent";
+  const data = r.data === "not_readable_by_asker" ? "clients " + whose + " may not read" : r.data === "readable_by_asker" ? "clients " + whose + " may read" : "clients";
+  let t;
+  if (r.action === "read_records") t = lead + " read the records of " + data;
+  else if (r.action === "change_record") t = lead + " change the record of " + (r.data === "not_readable_by_asker" ? "a client " + whose + " may not change" : r.data === "readable_by_asker" ? "a client " + whose + " may change" : "any client");
+  else if (r.action === "ask_agent") t = lead + " ask " + (r.to_agents.length ? orList(r.to_agents.map(a => RN[a])) : "another agent") + " for help";
+  else {
+    const m = r.metrics.length ? orList(r.metrics.map(x => RM[x])) : "counts or totals", c = [];
+    // the size conditions always count clients the asking agent may not read, whatever the data setting says
+    const prot = "clients " + whose + " may not read";
+    if (r.protected_group_below) c.push("covering fewer than " + r.protected_group_below + " " + prot);
+    if (r.differs_below) c.push((c.length ? "" : "that ") + "differ from an earlier answer by fewer than " + r.differs_below + " " + prot);
+    t = lead + " get " + m + " " + (c.length ? c.join(" and ") : "about " + data);
+  }
+  if (r.filters.length) t += " using " + orList(r.filters.map(f => RF[f]));
+  return helper + t + ".";
+}
+// short label for a matrix cell
+function shortRule(r) {
+  const c = [];
+  if (r.protected_group_below) c.push("groups of " + r.protected_group_below + "+ only");
+  if (r.differs_below) c.push("no near-duplicates");
+  if (r.filters.length) c.push("no " + r.filters.map(f => f.replace("_", " ")).join("/") + " filters");
+  if (r.metrics.length && !c.length) c.push("no " + r.metrics.map(m => RM[m]).join("/"));
+  const forOthers = r.acting === "for_another_agent" || (r.acting === "any" && r.data === "not_readable_by_asker");
+  if (r.action === "read_records" && forOthers) c.push((r.agents.includes("any") ? "helper" : r.agents.map(a => a.toUpperCase()).join("/") + " as helper") + " may not read for it");
+  if (r.action === "change_record" && forOthers) c.push((r.agents.includes("any") ? "helper" : r.agents.map(a => a.toUpperCase()).join("/") + " as helper") + " may not change for it");
+  if (r.action === "ask_agent") c.push("asking refused" + (r.to_agents.length ? " (" + r.to_agents.join("/") + ")" : ""));
+  if (!c.length) c.push(r.action.replace("_", " ") + " refused");
+  return r.id + ": " + c.join(", ");
 }
 
 // ---------------------------------------------------------------- queries
@@ -152,7 +229,37 @@ function makeGate(policy) {
     }
     return { records: policy.records[callee], aggregates: policy.aggregates[callee], edit: (policy.edit || {})[callee] || [], learner: callee };
   }
+  const ahist = {}; // asker -> sets of totals it already received (for differs_below)
+  const ACTION = { read_clients: "read_records", update_client: "change_record", client_stats: "counts_totals", ask_agent: "ask_agent" };
+  function ruleHits(r, chain, tool, d) {
+    const callee = chain[chain.length - 1], asker = chain[0], a = d.args;
+    if (ACTION[tool] !== r.action) return false;
+    if (!r.agents.includes("any") && !r.agents.includes(callee)) return false;
+    if (r.acting === "alone" && chain.length > 1) return false;
+    if (r.acting === "for_another_agent" && (chain.length < 2 || (r.asked_by.length && !r.asked_by.includes(asker)))) return false;
+    if (r.action === "ask_agent") return !r.to_agents.length || r.to_agents.includes(a.agent);
+    const may = r.action === "change_record" ? ((policy.edit || {})[asker] || []) : (policy.records[asker] || []);
+    const set = d.set || [], prot = set.filter(id => !may.includes(BY_ID[id].region));
+    if (r.data === "not_readable_by_asker" && !prot.length) return false;
+    if (r.data === "readable_by_asker" && prot.length) return false;
+    if (r.action !== "counts_totals") return true;
+    if (r.metrics.length && !r.metrics.includes(a.metric)) return false;
+    if (r.filters.length && !r.filters.some(f => a[f] != null && a[f] !== "" && !(f === "region" && a[f] === "all"))) return false;
+    if (r.protected_group_below && !(prot.length >= 1 && prot.length < r.protected_group_below)) return false;
+    if (r.differs_below) {
+      const hit = (ahist[asker] || []).some(h => { const diff = symDiff(h, set); const du = diff.filter(id => !may.includes(BY_ID[id].region));
+        return (isSubset(h, set) || isSubset(set, h)) && du.length >= 1 && du.length < r.differs_below; });
+      if (!hit) return false;
+    }
+    return true;
+  }
   function decide(chain, tool, args) {
+    const d = baseDecide(chain, tool, args);
+    if (d.decision !== "allow" || !(policy.deny_rules || []).length) return d;
+    const r = policy.deny_rules.find(r => ruleHits(r, chain, tool, d));
+    return r ? Object.assign({}, d, { decision: "block", rule: r.id, reason: "rule " + r.id + ": " + describeRule(r) }) : d;
+  }
+  function baseDecide(chain, tool, args) {
     const a = cleanArgs(tool, args), callee = chain[chain.length - 1], eff = effective(chain);
     const out = d => Object.assign({ args: a }, d);
     if (tool === "ask_agent") {
@@ -193,7 +300,7 @@ function makeGate(policy) {
     }
     return out({ decision: "block", rule: "default", reason: "unknown tool" });
   }
-  function remember(chain, tool, d) { if (tool === "client_stats" && d.decision === "allow") { const L = effective(chain).learner; (hist[L] = hist[L] || []).push({ metric: d.args.metric, set: d.set }); } }
+  function remember(chain, tool, d) { if (tool === "client_stats" && d.decision === "allow") { const L = effective(chain).learner; (hist[L] = hist[L] || []).push({ metric: d.args.metric, set: d.set }); (ahist[chain[0]] = ahist[chain[0]] || []).push(d.set); } }
   return { decide, remember, policy };
 }
 const symDiff = (x, y) => x.filter(i => !y.includes(i)).concat(y.filter(i => !x.includes(i)));
@@ -375,6 +482,10 @@ function policyChanges(a, b) {
   if ((a.min_group || 0) !== (b.min_group || 0)) out.push({ key: "min_group", area: "Counts & totals", text: b.min_group ? "Counts & totals must cover at least " + b.min_group + " clients the agent cannot see" : "Minimum group size removed", apply: p => { p.min_group = b.min_group; } });
   if (!!a.overlap_guard !== !!b.overlap_guard) out.push({ key: "overlap", area: "Counts & totals", text: b.overlap_guard ? "No two totals may differ by just one or two such clients (no subtracting)" : "Near-duplicate check removed", apply: p => { p.overlap_guard = b.overlap_guard; } });
   if (a.relay !== b.relay) out.push({ key: "relay", area: "Asking another agent", text: { open: "Asking another agent: no longer covered", blocked: "Asking another agent: not allowed at all", on_behalf: "Asking another agent: allowed, but the helper uses only the rights both agents hold" }[b.relay], apply: p => { p.relay = b.relay; } });
+  const key = r => describeRule(Object.assign({}, r, { id: "" })), ka = new Set((a.deny_rules || []).map(key)), kb = new Set((b.deny_rules || []).map(key));
+  const AREA = { counts_totals: "Counts & totals", ask_agent: "Asking another agent", read_records: "Reading records", change_record: "Changing records" };
+  for (const r of b.deny_rules || []) if (!ka.has(key(r))) out.push({ key: "rule:" + r.id, area: r.acting === "for_another_agent" ? "Asking another agent" : AREA[r.action], text: describeRule(r), why: r.why, rule: r, apply: p => { p.deny_rules = (p.deny_rules || []).concat([r]); } });
+  for (const r of a.deny_rules || []) if (!kb.has(key(r))) out.push({ key: "unrule:" + r.id, area: AREA[r.action], text: "Removed: " + describeRule(r), apply: p => { p.deny_rules = (p.deny_rules || []).filter(x => key(x) !== key(r)); } });
   return out;
 }
 
@@ -388,15 +499,16 @@ function policyRules(p) {
     else out.push("The " + N[a] + (r.length ? " reads " + regs(r) : " reads no client records") + (e.length ? " and changes " + regs(e) + "." : ", and changes none."));
   }
   const ag = ["cn", "eu", "gl"].map(a => p.aggregates[a]);
-  if (ag.every(x => x === "all")) out.push(p.min_group > 0 || p.overlap_guard ? "Every agent may run counts and totals across all regions, within the safeguards below." : "Counts and totals are anonymous, so every agent may run them across all regions.");
+  if (ag.every(x => x === "all")) out.push(p.min_group > 0 || p.overlap_guard || (p.deny_rules || []).length ? "Every agent may run counts and totals across all regions, except where the rules below refuse them." : "Counts and totals are anonymous, so every agent may run them across all regions.");
   else for (const a of ["cn", "eu", "gl"]) out.push("The " + N[a] + " may run counts and totals " + ({ all: "across all regions.", own: "for the regions it may read only.", none: "not at all." })[p.aggregates[a]]);
   if (p.min_group > 0) out.push("A count or total must cover at least " + p.min_group + " clients the agent cannot read; smaller groups are withheld.");
   if (p.overlap_guard) out.push("Two answers to the same agent may not differ by fewer than " + Math.max(p.min_group, K_TRUTH) + " such clients (no subtracting totals).");
   if (p.relay === "blocked") out.push("Agents may not ask each other for client data.");
   if (p.relay === "on_behalf") out.push("An agent may ask another for help, but the helper uses only the rights both of them hold.");
+  (p.deny_rules || []).forEach(r => out.push(r.id + ". " + describeRule(r)));
   return out;
 }
 
-const API = { CLIENTS, BY_ID, CITIES, AGENTS, MAY_KNOW, MAY_EDIT, RISK, freshState, findClient, K_TRUTH, POLICY_SCHEMA, REGION_NAME, policyV1, validatePolicy, makeGate, exec, makeDetector, describe, cleanArgs, leakStory, scorePolicy, moneyIn, eur, policyRules, symDiff, isSubset, matchSet, normalise, confirmFinding, evalExpr, policyChanges, METHOD };
+const API = { RULE_SCHEMA, normaliseRule, validateRule, describeRule, shortRule, CLIENTS, BY_ID, CITIES, AGENTS, MAY_KNOW, MAY_EDIT, RISK, freshState, findClient, K_TRUTH, POLICY_SCHEMA, REGION_NAME, policyV1, validatePolicy, makeGate, exec, makeDetector, describe, cleanArgs, leakStory, scorePolicy, moneyIn, eur, policyRules, symDiff, isSubset, matchSet, normalise, confirmFinding, evalExpr, policyChanges, METHOD };
 if (typeof module !== "undefined" && module.exports) module.exports = API;
 if (typeof window !== "undefined") window.ENGINE = API;

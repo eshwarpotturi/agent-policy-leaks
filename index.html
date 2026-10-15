@@ -76,7 +76,7 @@ table.mx{border-collapse:separate;border-spacing:5px;width:100%;min-width:680px;
 .tool{border:1px solid var(--line);border-radius:9px;padding:7px 10px;display:grid;gap:3px}.tool code{font-weight:700;font-size:13px}.tool .d{font-size:13px}.tool .ps{display:flex;flex-wrap:wrap;gap:4px}.tool .ps span{font-size:11.5px;font-family:"IBM Plex Mono",monospace;background:var(--soft);border-radius:5px;padding:1px 6px}.tool .ps span.req{font-weight:700}
 pre.prompt{white-space:pre-wrap;font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.5;background:#151a24;color:#e7ebf2;border-radius:9px;padding:10px 12px;margin:4px 0 0;max-height:280px;overflow:auto}
 @media (max-width:900px){.rgroups{grid-template-columns:1fr}.agrid{grid-template-columns:1fr}}
-.guide[hidden]{display:none}
+.guide[hidden]{display:none}.guards[hidden]{display:none}
 .svgag{cursor:pointer}.svgag:hover rect{filter:drop-shadow(0 2px 6px rgba(20,26,36,.25))}
 body.guiding .guide{z-index:25}
 .vrow{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:5px 8px;border-radius:7px;background:var(--leakbg);font-size:13px}
@@ -235,7 +235,9 @@ footer{font-size:12.5px;color:var(--muted)}
       case "chapter_end": S.dayDone = ev; S.status = ""; S.inv = null; break;
       case "fix_start": S.drafts = S.drafts.filter(d => d.round !== ev.round); S.proposal = null; S.approval = null; S.status = "The Policy agent is drafting; code re-tests every draft on every question from the day…"; break;
       case "draft": ev = Object.assign({}, ev, { score: fixScore(ev.score) }); if (!S.drafts.length || S.drafts[S.drafts.length - 1].round !== ev.round) { S.proposal = null; S.approval = null; } S.drafts.push(ev); S.status = "Draft " + ev.n + (ev.score ? ": stops " + ev.score.leaks_blocked + "/" + ev.score.leaks_total + " violations, breaks " + ev.score.legit_blocked + " everyday questions" : " was invalid"); break;
-      case "proposal": S.proposal = ev = Object.assign({}, ev, { score: fixScore(ev.score) }); S.status = "A proposal is ready. You decide."; break;
+      case "proposal": S.proposal = ev = Object.assign({}, ev, { score: fixScore(ev.score),
+          // rule sentences are regenerated from the rules themselves, so older recordings get the current wording
+          changes: (ev.changes || []).map(c => { const id = /^rule:(R\d+)$/.exec(c.key || ""), r = id && ((ev.policy || {}).deny_rules || []).find(x => x.id === id[1]); return r ? Object.assign({}, c, { text: E.describeRule(r) }) : c; }) }); S.status = "A proposal is ready. You decide."; break;
       case "approval": { S.approval = ev; if (!S.proposal) { const d = S.drafts.find(x => x.n === ev.draft && x.round === ev.round) || S.drafts[S.drafts.length - 1]; if (d) S.proposal = { kind: "proposal", draft: d.n, policy: d.policy, score: d.score, from: S.policy }; } S.status = ""; break; }
       case "policy": {
         S.prevPolicy = withRules(ev.from || S.policy); S.policy = withRules(ev.policy); S.changed = new Set();
@@ -251,7 +253,27 @@ footer{font-size:12.5px;color:var(--muted)}
   const curPolicy = () => draftPolicy || S.policy;
 
   // ---------------- what each matrix cell says
+  // which of the policy's refusal rules show up in a matrix cell
+  function cellRules(p, r, c) {
+    return (p.deny_rules || []).filter(x => {
+      // a read/change rule about clients the REQUESTING agent may not see only adds something when an agent helps another:
+      // show it under "Asking another agent", on the rows of the agents that could be helped
+      if ((x.action === "read_records" || x.action === "change_record") && x.acting !== "alone" && x.data === "not_readable_by_asker")
+        return c === "relay" && (!x.asked_by.length || x.asked_by.includes(r)) && (x.agents.includes("any") || x.agents.some(a => a !== r));
+      if (x.acting === "for_another_agent" && (x.action === "read_records" || x.action === "change_record")) return c === "relay" && (!x.asked_by.length || x.asked_by.includes(r));
+      if (!x.agents.includes("any") && !x.agents.includes(r)) return false;
+      return x.action === "counts_totals" ? c === "stats" : x.action === "ask_agent" ? c === "relay" : x.action === "change_record" ? c === "edit" : c.startsWith("rec_");
+    });
+  }
   function cellText(p, r, c) {
+    const base = cellText0(p, r, c), rs = cellRules(p, r, c);
+    if (!rs.length) return base;
+    const total = rs.find(x => x.action === "ask_agent" && !x.to_agents.length && x.acting !== "for_another_agent" && (x.agents.includes("any") || x.agents.includes(r)));
+    if (total) return { st: "no", v: "✗ refused", q: total.id };
+    const q = [base.q, ...rs.map(E.shortRule)].filter(Boolean).join(" · ");
+    return base.st === "unset" ? { st: "yes", v: "✓ allowed", q } : Object.assign({}, base, { q });
+  }
+  function cellText0(p, r, c) {
     if (c.startsWith("rec_")) return p.records[r].includes(c.slice(4)) ? { st: "yes", v: "✓ may read" } : { st: "no", v: "✗ may not read" };
     if (c === "edit") { const e = (p.edit || {})[r] || []; return e.length ? { st: "yes", v: "✓ " + (e.length === 2 ? "China and EU" : e[0] === "CN" ? "China clients" : "EU clients") } : { st: "no", v: "✗ none" }; }
     if (c === "stats") { const a = p.aggregates[r]; if (a === "none") return { st: "no", v: "✗ none" }; const q = []; if (p.min_group > 0) q.push("groups of " + p.min_group + "+ only"); if (p.overlap_guard) q.push("no near-duplicates");
@@ -302,7 +324,8 @@ footer{font-size:12.5px;color:var(--muted)}
       h += "</tr>";
     }
     $("mx").innerHTML = h;
-    $("guards").innerHTML = `<span class="g"><b>Safeguards</b></span>
+    $("guards").hidden = MODE !== "live" && !(p.min_group > 0 || p.overlap_guard);
+    $("guards").innerHTML = `<span class="g"><b>${(p.deny_rules || []).length ? "Your own quick safeguards" : "Safeguards"}</b></span>
       <span class="g">Minimum group size <span class="stepper"><button data-g="mg-" ${editable ? "" : "disabled"}>−</button><span>${p.min_group || "off"}</span><button data-g="mg+" ${editable ? "" : "disabled"}>+</button></span></span>
       <span class="g">Block near-duplicate totals <button class="tog ${p.overlap_guard ? "on" : ""}" data-g="og" ${editable ? "" : "disabled"}>${p.overlap_guard ? "on" : "off"}</button></span>
       ${MODE === "live" ? '<span class="hint">Click a cell to see it or change it.</span>' : '<span class="hint">To edit the policy, run the live tool (node server.js).</span>'}`;
@@ -440,8 +463,8 @@ footer{font-size:12.5px;color:var(--muted)}
     let h = `<h2><span>Policy agent · proposed fix</span><span class="h2n">every draft is re-tested by code on every question from the day</span></h2>`;
     if (P && pol) {
       const changes = P.changes || E.policyChanges(from, pol).map(c => ({ area: c.area, text: c.text }));
-      h += `<div class="callout"><b class="t">What the agent changed · ${pl(changes.length, "change")}</b>${changes.map(c => `<div class="chgrow"><span class="area">${esc(c.area)}</span><span>${esc(c.text)}</span><span class="eff">${c.closes != null ? `<span style="color:var(--ok)">closes ${c.closes}</span>${c.breaks ? ` · <span style="color:var(--leak)">breaks ${c.breaks}</span>` : ""}` : ""}</span></div>`).join("")}
-        <div class="hint">Reading and changing client records stay exactly as they were.${changes.some(c => c.closes != null) ? " “Closes” = violations from the day this change alone would have stopped." : ""}</div></div>`;
+      h += `<div class="callout"><b class="t">What the agent changed · ${pl(changes.length, "change")}</b>${changes.map(c => `<div class="chgrow"><span class="area">${esc(c.area)}</span><span>${esc(c.text)}${c.why ? `<br><span class="hint">Agent's reason: ${esc(c.why)}</span>` : ""}</span><span class="eff">${c.closes != null ? `<span style="color:var(--ok)">closes ${c.closes}</span>${c.breaks ? ` · <span style="color:var(--leak)">breaks ${c.breaks}</span>` : ""}` : ""}</span></div>`).join("")}
+        <div class="hint">${(pol.deny_rules || []).length ? "Written by the Policy agent in the Gate's rule language. Each sentence is generated from the rule the Gate enforces; rules can only refuse, never grant. " : ""}Reading and changing client records stay exactly as they were.${changes.some(c => c.closes != null) ? " “Closes” = violations from the day this change alone would have stopped." : ""}</div></div>`;
     }
     h += `<div class="drafts">${dr.map(d => d.score ? `<span class="dr ${d.score.leaks_blocked === d.score.leaks_total && !d.score.legit_blocked ? "ok" : "bad"}">Draft ${d.n}: stops ${d.score.leaks_blocked}/${d.score.leaks_total} violations · breaks ${d.score.legit_blocked} everyday ${d.score.legit_blocked === 1 ? "question" : "questions"}</span>` : `<span class="dr bad">Draft ${d.n}: invalid</span>`).join("")}${!P && (S.busy || playing) ? '<span class="dr"><span class="spin"></span>drafting…</span>' : ""}</div>`;
     if (P && pol) {
@@ -600,7 +623,7 @@ footer{font-size:12.5px;color:var(--muted)}
     if (seg.some(e => e.kind === "done")) return "done";
     return null;
   }
-  function play(kind) { if (playing || nextSegment() !== kind) return false; const end = segEnd(cursor); playing = true; const seg = RUN.events.slice(cursor, end + 1); cursor = end + 1; enqueue(seg); return true; }
+  function play(kind) { if (playing && QUEUE.length) return false; if (nextSegment() !== kind) return false; const end = segEnd(cursor); playing = true; const seg = RUN.events.slice(cursor, end + 1); cursor = end + 1; enqueue(seg); return true; }
   function startReplay(run) {
     RUN = run; MODE = "replay"; cursor = 0; playing = false; paused = false; QUEUE.length = 0; clearTimeout(ptimer); pumping = false;
     S = fresh(withRules(E.policyV1())); dotCount = 0; wallKey = null;
@@ -666,7 +689,8 @@ footer{font-size:12.5px;color:var(--muted)}
       case "draft": if (ev.score && ev.score.legit_blocked) narrate(`Draft ${ev.n} stops ${ev.score.leaks_blocked} of ${ev.score.leaks_total} violations but <b>breaks ${pl(ev.score.legit_blocked, "everyday question")}</b>. Too blunt: the agent tries again.`, { spot: ["propcard"] }); break;
       case "proposal": if (MODE === "live") narrate(proposalLine(ev) + " <b>You decide:</b> approve or reject it below.", { spot: ["propcard"], scrollTo: "propcard" }); break;
       case "approval":
-        if (MODE !== "live") narrate(proposalLine(S.proposal || {}) + ` <b>${ev.decision === "approve" ? "Approved" : "Rejected"} by ${esc(ev.by)}.</b>`, { spot: ["propcard"], scrollTo: "propcard", pause: true });
+        if (MODE !== "live" && ev.decision !== "approve") narrate(proposalLine(S.proposal || {}) + ` <b>Rejected by ${esc(ev.by)}:</b> “${esc(ev.reason || "")}” The Policy agent reads the reason and drafts again.`, { spot: ["propcard"], scrollTo: "propcard", pause: true, tone: "red", label: "Let it draft again ›", next: () => act("fix") });
+        else if (MODE !== "live") narrate(proposalLine(S.proposal || {}) + ` <b>Approved by ${esc(ev.by)}.</b>`, { spot: ["propcard"], scrollTo: "propcard", pause: true });
         else if (ev.decision !== "approve") narrate("Rejected. The Policy agent reads your reason and drafts again.", { spot: ["propcard"] });
         break;
       case "policy": { const m = recheckMap(), old = S.leaks.filter(L => L.ver < ev.version), stop = old.filter(L => (L.queryIdx || []).some(q => m[q] && m[q].decision !== "allow")).length;
@@ -678,7 +702,7 @@ footer{font-size:12.5px;color:var(--muted)}
   }
   function proposalLine(P) {
     const s = P.score || {}, ch = P.changes || (P.policy ? E.policyChanges(withRules(P.from || S.prevPolicy || E.policyV1()), withRules(P.policy)) : []);
-    return `<b>The agent's fix, in ${pl(ch.length, "change")}:</b> ${ch.map(c => esc(c.text) + (c.closes != null ? ` <i>(closes ${c.closes})</i>` : "")).join("; ")}. Re-tested on the whole day: <b>${s.leaks_blocked}/${s.leaks_total} violations stopped</b>, <b>${s.legit_total - s.legit_blocked}/${s.legit_total} everyday questions</b> still work.`;
+    return `<b>The agent's fix, in ${pl(ch.length, "change")}:</b> ${ch.map(c => esc(c.text.replace(/\.$/, "")) + (c.closes != null ? ` <i>(closes ${c.closes})</i>` : "")).join("; ")}. Re-tested on the whole day: <b>${s.leaks_blocked}/${s.leaks_total} violations stopped</b>, <b>${s.legit_total - s.legit_blocked}/${s.legit_total} everyday questions</b> still work.`;
   }
   function finalReplay() {
     const done = RUN.events.find(e => e.kind === "done"), s = (done && done.summary) || RUN.summary, broke = s && s.routine_still_working < s.routine_total;
