@@ -76,6 +76,12 @@ table.mx{border-collapse:separate;border-spacing:5px;width:100%;min-width:680px;
 .tool{border:1px solid var(--line);border-radius:9px;padding:7px 10px;display:grid;gap:3px}.tool code{font-weight:700;font-size:13px}.tool .d{font-size:13px}.tool .ps{display:flex;flex-wrap:wrap;gap:4px}.tool .ps span{font-size:11.5px;font-family:"IBM Plex Mono",monospace;background:var(--soft);border-radius:5px;padding:1px 6px}.tool .ps span.req{font-weight:700}
 pre.prompt{white-space:pre-wrap;font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.5;background:#151a24;color:#e7ebf2;border-radius:9px;padding:10px 12px;margin:4px 0 0;max-height:280px;overflow:auto}
 @media (max-width:900px){.rgroups{grid-template-columns:1fr}.agrid{grid-template-columns:1fr}}
+.mini.delta td{font-size:12.5px;line-height:1.35}.mini.delta td.same{opacity:.38}
+.mini.delta td.chgd{background:#fff6e0;box-shadow:inset 0 0 0 3px var(--chg);text-align:left;padding:7px 8px}
+.mini.delta .was{font-size:11px;color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(0,0,0,.35)}
+.mini.delta .now{font-weight:700;color:#7a4b00;font-size:13px}.mini.delta .keep{font-size:12px;color:#3d4452}
+.rid{display:inline-block;font-size:10px;font-weight:700;color:#fff;background:var(--chg);border-radius:4px;padding:0 4px;margin-left:2px;vertical-align:1px}
+.was2{font-size:10.5px;color:var(--muted);text-decoration:line-through}.q.qnew{font-weight:700;color:#7a4b00;font-size:12.5px}
 .guide[hidden]{display:none}.guards[hidden]{display:none}
 .svgag{cursor:pointer}.svgag:hover rect{filter:drop-shadow(0 2px 6px rgba(20,26,36,.25))}
 body.guiding .guide{z-index:25}
@@ -319,7 +325,8 @@ footer{font-size:12.5px;color:var(--muted)}
         const methods = [...new Set(lk.map(mlabel))];
         const v = lk.length ? (c === "edit" ? "⚠ changed anyway" : "⚠ reached it anyway") : ct.v;
         const q = lk.length ? pl(new Set(lk.flatMap(L => L.victims)).size, "client") + " · " + pl(methods.length, "method") : (ct.q || "");
-        h += `<td class="${cls}" data-k="${k}">${lockLabel(r, c) ? `<span class="lock">${lockLabel(r, c)}</span>` : ""}<div class="v">${v}</div>${q ? `<div class="q">${esc(q)}</div>` : ""}${tally.length ? `<span class="tl">${tally.filter(d => d.ev.decision === "allow").length}✓ ${tally.filter(d => d.ev.decision !== "allow").length}✗</span>` : ""}</td>`;
+        const was0 = S.changed.has(k) && !draftPolicy && S.prevPolicy && !lk.length ? cellText(S.prevPolicy, r, c) : null, was = was0 && was0.v !== ct.v ? was0 : null, added = !!was0;
+        h += `<td class="${cls}" data-k="${k}">${lockLabel(r, c) ? `<span class="lock">${lockLabel(r, c)}</span>` : ""}${was ? `<div class="was2">was: ${esc(was.v.replace(/^. /, ""))}</div>` : ""}<div class="v">${v}</div>${q ? `<div class="q${added ? " qnew" : ""}">${added ? "except: " + ruleWords({ q }) : esc(q)}</div>` : ""}${tally.length ? `<span class="tl">${tally.filter(d => d.ev.decision === "allow").length}✓ ${tally.filter(d => d.ev.decision !== "allow").length}✗</span>` : ""}</td>`;
       }
       h += "</tr>";
     }
@@ -451,10 +458,18 @@ footer{font-size:12.5px;color:var(--muted)}
   function closeModal() { $("modal").classList.remove("show"); }
 
   // ---------------- proposal: what changed, drafts, before / after stacked, decision
+  // one table, before → after: unchanged cells fade back, changed cells say what they were and what they are now
+  const cellWords = t => esc(t.v.replace(/^. /, ""));
+  const ruleWords = t => (t.q || "").split(" · ").map(x => { const m = /^(R\d+): (.*)$/.exec(x); return m ? `${esc(m[2])} <span class="rid">${m[1]}</span>` : esc(x); }).join("<br>");
   function miniHTML(p, other) {
-    return `<table class="mini"><tr><th style="width:18%"></th>${COLS.map(([, l]) => `<th>${l}</th>`).join("")}</tr>` + ROWS.map(r => `<tr><td class="a">${NAME[r]}</td>` + COLS.map(([c]) => { const t = cellText(p, r, c), ch = other && JSON.stringify(t) !== JSON.stringify(cellText(other, r, c));
-      return `<td style="background:${t.st === "yes" ? "var(--okbg)" : t.st === "no" ? "var(--nobg)" : "#fff"};${ch ? "box-shadow:inset 0 0 0 3px var(--chg);" : ""}">${esc(t.v.replace(/^. /, ""))}${t.q ? `<div class="hint" style="font-size:11px">${esc(t.q)}</div>` : ""}</td>`; }).join("") + "</tr>").join("") + "</table>";
+    return `<table class="mini delta"><tr><th style="width:16%"></th>${COLS.map(([, l]) => `<th>${l}</th>`).join("")}</tr>` + ROWS.map(r => `<tr><td class="a">${NAME[r]}</td>` + COLS.map(([c]) => {
+      const t = cellText(p, r, c), o = other ? cellText(other, r, c) : null, ch = o && JSON.stringify(t) !== JSON.stringify(o);
+      if (!ch) return `<td class="same" style="background:${t.st === "yes" ? "var(--okbg)" : t.st === "no" ? "var(--nobg)" : "#fff"}">${cellWords(t)}</td>`;
+      const same = t.v === o.v, rules = t.q ? `<div class="now">${ruleWords(t)}</div>` : "";
+      return same ? `<td class="chgd"><div class="keep">${cellWords(t)}, except:</div>${rules}</td>`
+        : `<td class="chgd"><div class="was">was: ${cellWords(o)}</div><div class="now">${cellWords(t)}${t.q ? ", except:" : ""}</div>${t.q ? `<div class="now">${ruleWords(t)}</div>` : ""}</td>`; }).join("") + "</tr>").join("") + "</table>";
   }
+
   function renderProposal() {
     const box = $("propcard"), P = S.proposal;
     if (!S.drafts.length && !P) { box.hidden = true; return; } box.hidden = false;
@@ -470,7 +485,7 @@ footer{font-size:12.5px;color:var(--muted)}
     if (P && pol) {
       const s = P.score;
       h += `<div class="score"><span>Violations stopped <b style="color:${s.leaks_blocked === s.leaks_total ? "var(--ok)" : "var(--leak)"}">${s.leaks_blocked}/${s.leaks_total}</b></span><span>Everyday questions still working <b style="color:${s.legit_blocked ? "var(--leak)" : "var(--ok)"}">${s.legit_total - s.legit_blocked}/${s.legit_total}</b></span>${s.legit_blocked_list.length ? `<span class="hint">would break: ${esc(s.legit_blocked_list.slice(0, 2).join("; "))}</span>` : ""}</div>
-        <div class="stack"><div><h4>Before · policy v${from.version}</h4>${miniHTML(from)}</div><div><h4>After · proposed v${pol.version} <span style="color:var(--chg)">(changed cells outlined)</span></h4>${miniHTML(pol, from)}</div></div>
+        <div><h4>The permissions matrix, v${from.version} → v${pol.version}: <span style="color:var(--chg)">only the highlighted cells change</span></h4>${miniHTML(pol, from)}<div class="hint" style="margin-top:4px">Faded cells stay exactly as they were. In each highlighted cell, the bold lines are the new rules (R1, R2…); a struck-through line is the old setting it replaces.</div></div>
         <div class="rules" style="margin-top:10px"><b class="t">Proposed policy in plain words</b><ol>${pol.rules.map(r => `<li class="${from.rules.includes(r) ? "" : "new"}">${esc(r)}</li>`).join("")}</ol>${pol.rationale ? `<div class="hint" style="margin-top:4px">Policy agent's reasoning: ${esc(pol.rationale)}</div>` : ""}</div>`;
       if (S.approval && S.approval.draft === P.draft) h += `<div class="actions"><span class="stamp ${S.approval.decision === "approve" ? "" : "rej"}">${S.approval.decision === "approve" ? "✓ Approved" : "✗ Rejected"} · ${esc(S.approval.by)}</span>${S.approval.reason ? `<span class="hint">“${esc(S.approval.reason)}”</span>` : ""}${S.approval.decision === "approve" ? '<span class="hint">Now enforced by the Gate (plain code).</span>' : ""}</div>`;
       else if (MODE === "live") h += `<div class="actions"><button class="btn go" id="bApprove" ${S.busy ? "disabled" : ""}>✓ Approve</button><button class="btn" id="bReject" ${S.busy ? "disabled" : ""}>✗ Reject, ask for another draft</button><input class="reason" id="reason" placeholder="Reason (the Policy agent reads it if you reject)"></div>`;
