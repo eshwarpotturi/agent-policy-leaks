@@ -82,6 +82,18 @@ pre.prompt{white-space:pre-wrap;font-family:"IBM Plex Mono",monospace;font-size:
 .mini.delta .now{font-weight:700;color:#7a4b00;font-size:13px}.mini.delta .keep{font-size:12px;color:#3d4452}
 .rid{display:inline-block;font-size:10px;font-weight:700;color:#fff;background:var(--chg);border-radius:4px;padding:0 4px;margin-left:2px;vertical-align:1px}
 .was2{font-size:10.5px;color:var(--muted);text-decoration:line-through}.q.qnew{font-weight:700;color:#7a4b00;font-size:12.5px}
+.bigwrap{border:2px solid var(--chg);background:#fffaf0;border-radius:14px;padding:12px 14px;margin:6px 0 12px;display:grid;gap:10px}
+.bigh{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7a4b00}
+.bigchg{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.bc{display:grid;grid-template-columns:34px 1fr;gap:10px;background:#fff;border:1px solid #f0d9a8;border-radius:12px;padding:12px}
+.bcn{width:30px;height:30px;border-radius:50%;background:var(--chg);color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px}
+.bcb{display:grid;gap:5px}.bct{font-size:17px;font-weight:800;line-height:1.25;color:#151a24}
+.bcr{display:grid;grid-template-columns:52px 1fr;gap:6px;align-items:baseline;font-size:14px;line-height:1.4}
+.bcl{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.bcl.now{color:var(--ok)}
+.bcbefore{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(0,0,0,.25)}.bcnow{font-weight:700;color:#0b6b3a}
+.bcm{font-size:12px;color:var(--muted)}
+.bigchg.compact .bct{font-size:15.5px}.bigchg.compact .bcr{font-size:13px}
+details.callout>summary{cursor:pointer;list-style:none}details.callout>summary::-webkit-details-marker{display:none}
 .guide[hidden]{display:none}.guards[hidden]{display:none}
 .svgag{cursor:pointer}.svgag:hover rect{filter:drop-shadow(0 2px 6px rgba(20,26,36,.25))}
 body.guiding .guide{z-index:25}
@@ -171,6 +183,7 @@ footer{font-size:12.5px;color:var(--muted)}
 
   <section class="card" id="polcard">
     <h2><span>Permission policy <span id="ver"></span></span><span class="h2n">click any cell for details</span></h2>
+    <div id="chgbanner"></div>
     <div class="mxw"><table class="mx" id="mx"></table></div>
     <div class="legend"><span><i style="background:var(--okbg);border:1px solid var(--ok)"></i>allowed</span><span><i style="background:var(--nobg);border:1px solid var(--no)"></i>not allowed</span><span><i style="border:1px dashed #9aa2b1"></i>policy says nothing</span><span><b style="color:var(--leak);font:600 10px 'IBM Plex Mono',monospace">MUST NEVER…</b> protected by the goal</span><span><i style="background:var(--leak)"></i>violated anyway</span></div>
     <div class="guards" id="guards"></div>
@@ -331,6 +344,9 @@ footer{font-size:12.5px;color:var(--muted)}
       h += "</tr>";
     }
     $("mx").innerHTML = h;
+    { const P = S.proposal && S.proposal.policy && S.proposal.policy.version === S.policy.version ? S.proposal : null;
+      const groups = S.prevPolicy && S.policy.version > S.prevPolicy.version && !draftPolicy ? changeGroups(S.prevPolicy, S.policy, P && P.changes) : [];
+      $("chgbanner").innerHTML = groups.length ? `<div class="bigwrap"><div class="bigh">Policy v${S.policy.version} is in force · what changed from v${S.prevPolicy.version}</div>${changeCardsHTML(groups, true)}<div class="hint">Everything else in the matrix stays as it was. Changed cells are outlined below.</div></div>` : ""; }
     $("guards").hidden = MODE !== "live" && !(p.min_group > 0 || p.overlap_guard);
     $("guards").innerHTML = `<span class="g"><b>${(p.deny_rules || []).length ? "Your own quick safeguards" : "Safeguards"}</b></span>
       <span class="g">Minimum group size <span class="stepper"><button data-g="mg-" ${editable ? "" : "disabled"}>−</button><span>${p.min_group || "off"}</span><button data-g="mg+" ${editable ? "" : "disabled"}>+</button></span></span>
@@ -457,6 +473,44 @@ footer{font-size:12.5px;color:var(--muted)}
   function openModal(html) { $("mbody").innerHTML = html; $("modal").classList.add("show"); }
   function closeModal() { $("modal").classList.remove("show"); }
 
+
+  // ---------------- "what changed", in big type: rules grouped by what they mean, each as before → now
+  const AGN = { cn: "China agent", eu: "EU agent", gl: "Global Analyst" };
+  function changeGroups(from, to, changes) {
+    const oldKeys = new Set((from.deny_rules || []).map(r => E.describeRule(Object.assign({}, r, { id: "" }))));
+    const added = (to.deny_rules || []).filter(r => !oldKeys.has(E.describeRule(Object.assign({}, r, { id: "" }))));
+    const closes = id => { const c = (changes || []).find(x => x.key === "rule:" + id); return c && c.closes != null ? c.closes : null; };
+    const G = {};
+    for (const r of added) {
+      const helper = (r.action === "read_records" || r.action === "change_record") && r.acting !== "alone" && r.data === "not_readable_by_asker";
+      let k, icon, title, before, now;
+      if (r.action === "counts_totals" && r.protected_group_below) { k = "small" + r.protected_group_below; icon = "👥"; title = "Tiny groups are refused";
+        before = "Any count, total or average was allowed, even one covering a single client"; now = "Must cover at least " + r.protected_group_below + " clients the agent may not see, or it is refused"; }
+      else if (r.action === "counts_totals" && r.differs_below) { k = "diff"; icon = "➖"; title = "No subtracting one total from another";
+        before = "Two totals one person apart could be subtracted"; now = "A total that differs from an earlier one by fewer than " + r.differs_below + " such clients is refused"; }
+      else if (r.action === "counts_totals" && r.filters.length) { k = "filt" + r.filters.join(); icon = "🔍"; title = "Narrow filters refused on others' clients";
+        before = "Any filter could be used"; now = "No " + r.filters.map(f => f.replace("_", " ")).join(" or ") + " filters on clients it may not see"; }
+      else if (helper && r.action === "read_records") { k = "hread"; icon = "🤝"; title = "A helper can't read for someone who isn't allowed";
+        before = "An agent could ask another, which then used its own access"; now = "Helping is still allowed, but a helper may not read records the asking agent can't read"; }
+      else if (helper && r.action === "change_record") { k = "hchange"; icon = "✏️"; title = "A helper can't change records for someone who isn't allowed";
+        before = "An agent could get a record changed by asking another"; now = "A helper may not change a record the asking agent can't change"; }
+      else if (r.action === "ask_agent") { k = "ask"; icon = "⛔"; title = "Asking another agent is refused";
+        before = "Agents could ask each other for help"; now = E.describeRule(r); }
+      else { k = r.id; icon = "•"; title = E.describeRule(r); before = ""; now = ""; }
+      const g = G[k] = G[k] || { icon, title, before, now, ids: [], agents: new Set(), closes: 0, known: false };
+      g.ids.push(r.id); (r.agents.includes("any") ? ["cn", "eu", "gl"] : r.agents).forEach(a => g.agents.add(a));
+      const c = closes(r.id); if (c != null) { g.closes += c; g.known = true; }
+    }
+    return Object.values(G);
+  }
+  function changeCardsHTML(groups, compact) {
+    if (!groups.length) return "";
+    return `<div class="bigchg${compact ? " compact" : ""}">` + groups.map((g, i) => `<div class="bc"><div class="bcn">${i + 1}</div><div class="bcb">
+      <div class="bct">${g.icon} ${esc(g.title)}</div>
+      <div class="bcr"><span class="bcl">Before</span><span class="bcbefore">${esc(g.before)}</span></div>
+      <div class="bcr"><span class="bcl now">Now</span><span class="bcnow">${esc(g.now)}</span></div>
+      <div class="bcm">${g.agents.size === 3 ? "All agents" : [...g.agents].map(a => AGN[a]).join(", ")} · rules ${g.ids.join(", ")}${g.known ? ` · <b style="color:var(--ok)">stops ${g.closes} of the day's violations</b>` : ""}</div></div></div>`).join("") + "</div>";
+  }
   // ---------------- proposal: what changed, drafts, before / after stacked, decision
   // one table, before → after: unchanged cells fade back, changed cells say what they were and what they are now
   const cellWords = t => esc(t.v.replace(/^. /, ""));
@@ -478,8 +532,10 @@ footer{font-size:12.5px;color:var(--muted)}
     let h = `<h2><span>Policy agent · proposed fix</span><span class="h2n">every draft is re-tested by code on every question from the day</span></h2>`;
     if (P && pol) {
       const changes = P.changes || E.policyChanges(from, pol).map(c => ({ area: c.area, text: c.text }));
-      h += `<div class="callout"><b class="t">What the agent changed · ${pl(changes.length, "change")}</b>${changes.map(c => `<div class="chgrow"><span class="area">${esc(c.area)}</span><span>${esc(c.text)}${c.why ? `<br><span class="hint">Agent's reason: ${esc(c.why)}</span>` : ""}</span><span class="eff">${c.closes != null ? `<span style="color:var(--ok)">closes ${c.closes}</span>${c.breaks ? ` · <span style="color:var(--leak)">breaks ${c.breaks}</span>` : ""}` : ""}</span></div>`).join("")}
-        <div class="hint">${(pol.deny_rules || []).length ? "Written by the Policy agent in the Gate's rule language. Each sentence is generated from the rule the Gate enforces; rules can only refuse, never grant. " : ""}Reading and changing client records stay exactly as they were.${changes.some(c => c.closes != null) ? " “Closes” = violations from the day this change alone would have stopped." : ""}</div></div>`;
+      const groups = changeGroups(from, pol, changes);
+      if (groups.length) h += `<div class="bigwrap"><div class="bigh">What the agent changes · ${pl(groups.length, "change")}</div>${changeCardsHTML(groups)}</div>`;
+      h += `<details class="callout"${groups.length ? "" : " open"}><summary><b class="t">The exact rules · ${pl(changes.length, "rule")}</b> <span class="hint">(click to expand)</span></summary>${changes.map(c => `<div class="chgrow"><span class="area">${esc(c.area)}</span><span>${esc(c.text)}${c.why ? `<br><span class="hint">Agent's reason: ${esc(c.why)}</span>` : ""}</span><span class="eff">${c.closes != null ? `<span style="color:var(--ok)">closes ${c.closes}</span>${c.breaks ? ` · <span style="color:var(--leak)">breaks ${c.breaks}</span>` : ""}` : ""}</span></div>`).join("")}
+        <div class="hint">${(pol.deny_rules || []).length ? "Written by the Policy agent in the Gate's rule language. Each sentence is generated from the rule the Gate enforces; rules can only refuse, never grant. " : ""}Reading and changing client records stay exactly as they were.${changes.some(c => c.closes != null) ? " “Closes” = violations from the day this change alone would have stopped." : ""}</div></details>`;
     }
     h += `<div class="drafts">${dr.map(d => d.score ? `<span class="dr ${d.score.leaks_blocked === d.score.leaks_total && !d.score.legit_blocked ? "ok" : "bad"}">Draft ${d.n}: stops ${d.score.leaks_blocked}/${d.score.leaks_total} violations · breaks ${d.score.legit_blocked} everyday ${d.score.legit_blocked === 1 ? "question" : "questions"}</span>` : `<span class="dr bad">Draft ${d.n}: invalid</span>`).join("")}${!P && (S.busy || playing) ? '<span class="dr"><span class="spin"></span>drafting…</span>' : ""}</div>`;
     if (P && pol) {
