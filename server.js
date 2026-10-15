@@ -7,9 +7,10 @@ const PORT = +process.env.PORT || 8770, DIR = __dirname;
 const log = m => console.log("[" + new Date().toLocaleTimeString("en-GB") + "] " + m);
 const clients = new Set(); let S, LLM, busy = null, lastError = null, T0 = Date.now();
 const send = (res, ev) => res.write("data: " + JSON.stringify(ev) + "\n\n");
+const BIG = process.argv.includes("--big"); // a busy day: ~108 everyday requests instead of 32
 function fresh() {
   LLM = makeChat(log); T0 = Date.now();
-  S = createRun({ chat: LLM.chat, model: LLM.MODEL, log, approve: null, onEvent: ev => { for (const c of clients) send(c, ev); } });
+  S = createRun({ chat: LLM.chat, model: LLM.MODEL, day: BIG ? "big" : "normal", log, approve: null, onEvent: ev => { for (const c of clients) send(c, ev); } });
   S.setup();
 }
 fresh();
@@ -44,4 +45,4 @@ http.createServer(async (req, res) => {
   let p = path.normalize(decodeURIComponent(u.pathname)).replace(/^([\/\\])+/, ""); if (!p) p = "index.html";
   const f = path.join(DIR, p); if (!f.startsWith(DIR) || /foundry-token/.test(f) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end("not found"); return; }
   res.writeHead(200, { "Content-Type": TYPES[path.extname(f)] || "application/octet-stream", "Cache-Control": "no-store" }); fs.createReadStream(f).pipe(res);
-}).listen(PORT, "127.0.0.1", () => { log("Policy leak finder, live: http://localhost:" + PORT); log("LLM Foundry token: " + tokenStatus()); });
+}).listen(PORT, "127.0.0.1", () => { log("Policy leak finder, live: http://localhost:" + PORT); log("LLM Foundry token: " + tokenStatus()); log(BIG ? "Busy day: " + (32 + require("./run.js").busyDayTasks().length) + " everyday requests" : "Normal day: 32 everyday requests (add --big for a busy day)"); });

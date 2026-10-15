@@ -6,7 +6,7 @@ A working POC: AI agents do a bank's everyday work under a permission policy you
 ```
 ..\AIA-Gov\tools\node-v22.11.0-win-x64\node.exe server.js
 ```
-Then open **http://localhost:8770**. It uses your LLM Foundry token from `.foundry-token` here or `..\AIA-Gov\.foundry-token.txt`.
+Then open **http://localhost:8770**. For a busy day (about 108 everyday requests and several hundred questions, so the violations are a few red dots among hundreds), start it with `server.js --big`. It uses your LLM Foundry token from `.foundry-token` here or `..\AIA-Gov\.foundry-token.txt`.
 
 ## ▶ Guided run (top right)
 One button runs the whole story on this run's real events: the rules, a normal day, a pause on each method of violation (too small a group, narrowing with filters, subtracting two totals, asking another agent, getting a record changed), the end-of-day count, the Policy agent's drafts, **your approval**, the attack, and the same day again under the new rules. A narration bar says what just happened and highlights the relevant panel; press **Continue** at each pause. Every sentence is built from what the agents actually did, so if a kind of violation didn't happen in a run, the story doesn't claim it. **Exit guide** returns to free use.

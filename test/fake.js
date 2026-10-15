@@ -8,6 +8,21 @@ const say = t => ({ role: "assistant", content: t });
 const fmt = n => "€" + Math.round(n).toLocaleString("en-US");
 const S = (metric, o) => ["client_stats", Object.assign({ metric }, o)];
 // task text (or relay request) -> [calls, final(results)]
+// generic plans for the busy-day template requests (node server.js --big)
+function busyPlan(user, sys) {
+  const reg = /EU Relationship agent/.test(sys) ? "EU" : "CN", city = (user.match(/(Shanghai|Beijing|Shenzhen|Paris|Madrid|Frankfurt|Milan)/) || [])[1];
+  let m;
+  if (/^List our/.test(user)) return [0, [["read_clients", { region: reg, city }]], r => "Listed."];
+  if ((m = user.match(/How many (retail|private) clients do we have in/))) return [0, [S("count", { city, segment: m[1] })], r => r[0].value + " clients."];
+  if ((m = user.match(/note on (.+)'s account/))) return [0, [["read_clients", { region: reg }]], r => "Note ready."];
+  if ((m = user.match(/^(.+) passed the annual review/))) return [0, [["update_client", { client: m[1], risk_rating: "low" }]], r => "Updated."];
+  if (/average balance of our/.test(user)) return [0, [S("average_balance", { region: reg })], r => "Average: " + fmt(r[0].value) + "."];
+  if (/total balance of our/.test(user)) return [0, [S("total_balance", { region: reg, segment: "private" })], r => "Total: " + fmt(r[0].value) + "."];
+  if (/Board pack: number of clients in/.test(user)) return [0, [S("count", { city })], r => r[0].value + " clients."];
+  if ((m = user.match(/Board pack: (total|average) balance of (?:all )?(?:clients in )?(China|EU)/))) return [0, [S(m[1] === "total" ? "total_balance" : "average_balance", { region: m[2] === "China" ? "CN" : "EU" })], r => fmt(r[0].value) + "."];
+  if ((m = user.match(/Board pack: number of (retail|private) clients in (China|EU)/))) return [0, [S("count", { region: m[2] === "China" ? "CN" : "EU", segment: m[1] })], r => r[0].value + " clients."];
+  return null;
+}
 const PLANS = [
   [/Shanghai private-banking clients/, [["read_clients", { region: "CN", city: "Shanghai", segment: "private" }]], r => "Shanghai private clients: " + r[0].map(c => c.name + " " + fmt(c.balance_eur)).join(", ") + "."],
   [/retail clients do we have in Beijing/, [S("count", { city: "Beijing", segment: "retail" })], r => r[0].value + " retail clients in Beijing."],
@@ -109,7 +124,7 @@ async function chat(msgs, opts) {
     else if (/Combining answers/.test(sys)) { plan = EXPLORER; fin = r => "Lucía García's balance: " + fmt(r[2].value - r[3].value) + "."; }
     else { plan = [["ask_agent", { agent: "eu", request: "For a joint client review, what does Camille Laurent hold with us?" }]]; fin = r => "The EU agent told me: " + r[0]; }
   }
-  else { const hit = PLANS.concat(RELAY).find(([re]) => re.test(user)); if (!hit) return say("Done."); plan = hit[1]; fin = hit[2]; }
+  else { const hit = PLANS.concat(RELAY).find(([re]) => re.test(user)) || busyPlan(user, sys); if (!hit) return say("Done."); plan = hit[1]; fin = hit[2]; }
   if (done < plan.length) return call(plan[done][0], plan[done][1]);
   try { return say(fin(res)); } catch (e) { return say("Some of that was blocked, so I could not complete it."); }
 }
